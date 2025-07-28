@@ -7,8 +7,8 @@
     ],
     "date_range": "Spring 2024",
     "total_stops": 3,
-    "total_distance_km": 3208.360993231233,
-    "estimated_time": "59 hours",
+    "total_distance_km": 24.0,
+    "estimated_time": "4-6 hours",
     "species_tiers": {
       "American Robin": "T1",
       "Northern Cardinal": "T1"
@@ -46,7 +46,7 @@
         "species": "American Robin",
         "target_month": "April",
         "target_region": "New York",
-        "confidence_score": 79.07570193633673,
+        "confidence_score": 75.20979577216787,
         "ai_recommendation": "Good AI assessment. American Robin has moderate probability in New York during April.",
         "ai_factors": {
           "seasonal_timing": true,
@@ -58,7 +58,7 @@
         "species": "Northern Cardinal",
         "target_month": "April",
         "target_region": "New York",
-        "confidence_score": 76.13874609363377,
+        "confidence_score": 73.34639182478071,
         "ai_recommendation": "Good AI assessment. Northern Cardinal has moderate probability in New York during April.",
         "ai_factors": {
           "seasonal_timing": true,
@@ -81,51 +81,51 @@
     ],
     "date_range": "Spring 2024",
     "total_stops": 3,
-    "total_distance_km": 3208.360993231233,
-    "estimated_total_time": "59 hours",
+    "total_distance_km": 24.0,
+    "estimated_total_time": "4-6 hours",
     "route_stops": [
       {
         "stop_number": 1,
         "location": {
-          "name": "Chicago",
-          "region": "Midwest",
+          "name": "New York",
+          "region": "Northeast",
           "coordinates": {
-            "latitude": 41.8781,
-            "longitude": -87.6298
+            "latitude": 40.7128,
+            "longitude": -74.006
           },
           "hotspots": [
             {
-              "name": "Montrose Point",
+              "name": "Central Park",
               "coordinates": {
-                "latitude": 41.8781,
-                "longitude": -87.6298
+                "latitude": 40.7128,
+                "longitude": -74.006
               },
-              "species_count": 250,
-              "description": "Lakefront migration hotspot",
-              "facilities": [],
-              "best_season": "",
-              "accessibility": "moderate"
-            },
-            {
-              "name": "Jackson Park",
-              "coordinates": {
-                "latitude": 41.8781,
-                "longitude": -87.6298
-              },
-              "species_count": 180,
+              "species_count": 230,
               "description": "Urban park with diverse habitats",
               "facilities": [],
               "best_season": "",
               "accessibility": "moderate"
             },
             {
-              "name": "North Park Village",
+              "name": "Prospect Park",
               "coordinates": {
-                "latitude": 41.8781,
-                "longitude": -87.6298
+                "latitude": 40.7128,
+                "longitude": -74.006
               },
-              "species_count": 160,
-              "description": "Wooded area with resident species",
+              "species_count": 180,
+              "description": "Brooklyn's premier birding location",
+              "facilities": [],
+              "best_season": "",
+              "accessibility": "moderate"
+            },
+            {
+              "name": "Jamaica Bay Wildlife Refuge",
+              "coordinates": {
+                "latitude": 40.7128,
+                "longitude": -74.006
+              },
+              "species_count": 320,
+              "description": "Coastal wetland habitat",
               "facilities": [],
               "best_season": "",
               "accessibility": "moderate"
@@ -134,39 +134,32 @@
           "climate": "temperate",
           "elevation": null
         },
-        "distance_from_previous": 1144.2912739463472,
-        "travel_time": "19 hours",
-        "species_compatibility": 0.712475976590239,
+        "distance_from_previous": 5,
+        "travel_time": "15 minutes",
+        "species_compatibility": 1.0,
         "ai_compatibility_factors": {
           "location_diversity": 1.0,
-          "seasonal_advantage": 0.8248636042759707,
-          "accessibility": 0.9872760445776146,
-          "ai_adjustment": 0.9373798829511951
+          "seasonal_advantage": 0.9415326926763803,
+          "accessibility": 0.8855171510081918,
+          "ai_adjustment": 0.9423499478948574
         },
         "hotspots": [
           {
-            "name": "Montrose Point",
-            "species_count": 250,
-            "description": "Lakefront migration hotspot",
+            "name": "Jamaica Bay Wildlife Refuge",
+            "species_count": 320,
+            "description": "Coastal wetland habitat",
             "ai_score": 1.0,
-            "ai_recommendation": "AI highly recommends Montrose Point for optimal birding experience"
-          },
-          {
-            "name": "Jackson Park",
-            "species_count": 180,
-            "description": "Urban park with diverse habitats",
-            "ai_score": 1.0,
-            "ai_recommendation": "AI highly recommends Jackson Park for optimal birding experience"
+            "ai_recommendation": "AI highly recommends Jamaica Bay Wildlife Refuge for optimal birding experience"
           }
         ],
         "viewing_schedule": {
           "recommended_time": "6:00 AM - 9:00 AM",
-          "activity_description": "Dawn chorus and early morning activity",
+          "activity_description": "Local birding at prime hotspots",
           "target_species_focus": [
             "American Robin",
             "Northern Cardinal"
           ],
-          "estimated_duration": "2-3 hours",
+          "estimated_duration": "1-2 hours",
           "weather_considerations": "",
           "ai_optimized_time": "5:30 AM - 8:30 AM",
           "ai_optimized_duration": "3-4 hours",
@@ -183,45 +176,45 @@
       {
         "stop_number": 2,
         "location": {
-          "name": "Boston",
+          "name": "New York",
           "region": "Northeast",
           "coordinates": {
-            "latitude": 42.3601,
-            "longitude": -71.0589
+            "latitude": 40.7128,
+            "longitude": -74.006
           },
           "hotspots": [
             {
-              "name": "Mount Auburn Cemetery",
+              "name": "Central Park",
               "coordinates": {
-                "latitude": 42.3601,
-                "longitude": -71.0589
+                "latitude": 40.7128,
+                "longitude": -74.006
               },
-              "species_count": 200,
-              "description": "Historic cemetery with mature trees",
+              "species_count": 230,
+              "description": "Urban park with diverse habitats",
               "facilities": [],
               "best_season": "",
               "accessibility": "moderate"
             },
             {
-              "name": "Parker River NWR",
+              "name": "Prospect Park",
               "coordinates": {
-                "latitude": 42.3601,
-                "longitude": -71.0589
+                "latitude": 40.7128,
+                "longitude": -74.006
               },
-              "species_count": 280,
-              "description": "Coastal refuge with diverse species",
+              "species_count": 180,
+              "description": "Brooklyn's premier birding location",
               "facilities": [],
               "best_season": "",
               "accessibility": "moderate"
             },
             {
-              "name": "Boston Common",
+              "name": "Jamaica Bay Wildlife Refuge",
               "coordinates": {
-                "latitude": 42.3601,
-                "longitude": -71.0589
+                "latitude": 40.7128,
+                "longitude": -74.006
               },
-              "species_count": 150,
-              "description": "Urban park with seasonal migrants",
+              "species_count": 320,
+              "description": "Coastal wetland habitat",
               "facilities": [],
               "best_season": "",
               "accessibility": "moderate"
@@ -230,39 +223,32 @@
           "climate": "temperate",
           "elevation": null
         },
-        "distance_from_previous": 306.10849421147475,
-        "travel_time": "5 hours",
-        "species_compatibility": 0.6773760631392696,
+        "distance_from_previous": 8,
+        "travel_time": "25 minutes",
+        "species_compatibility": 1.0,
         "ai_compatibility_factors": {
           "location_diversity": 1.0,
-          "seasonal_advantage": 0.7971355692386298,
-          "accessibility": 0.8635053778504127,
-          "ai_adjustment": 0.8868803156963475
+          "seasonal_advantage": 0.7979465191252839,
+          "accessibility": 0.9072848556331697,
+          "ai_adjustment": 0.9017437915861511
         },
         "hotspots": [
           {
-            "name": "Parker River NWR",
-            "species_count": 280,
-            "description": "Coastal refuge with diverse species",
+            "name": "Central Park",
+            "species_count": 230,
+            "description": "Urban park with diverse habitats",
             "ai_score": 1.0,
-            "ai_recommendation": "AI highly recommends Parker River NWR for optimal birding experience"
-          },
-          {
-            "name": "Mount Auburn Cemetery",
-            "species_count": 200,
-            "description": "Historic cemetery with mature trees",
-            "ai_score": 1.0,
-            "ai_recommendation": "AI highly recommends Mount Auburn Cemetery for optimal birding experience"
+            "ai_recommendation": "AI highly recommends Central Park for optimal birding experience"
           }
         ],
         "viewing_schedule": {
           "recommended_time": "6:00 AM - 9:00 AM",
-          "activity_description": "Dawn chorus and early morning activity",
+          "activity_description": "Local birding at prime hotspots",
           "target_species_focus": [
             "American Robin",
             "Northern Cardinal"
           ],
-          "estimated_duration": "2-3 hours",
+          "estimated_duration": "1-2 hours",
           "weather_considerations": "",
           "ai_optimized_time": "5:30 AM - 8:30 AM",
           "ai_optimized_duration": "3-4 hours",
@@ -279,45 +265,45 @@
       {
         "stop_number": 3,
         "location": {
-          "name": "Miami",
-          "region": "Southeast",
+          "name": "New York",
+          "region": "Northeast",
           "coordinates": {
-            "latitude": 25.7617,
-            "longitude": -80.1918
+            "latitude": 40.7128,
+            "longitude": -74.006
           },
           "hotspots": [
             {
-              "name": "Everglades National Park",
+              "name": "Central Park",
               "coordinates": {
-                "latitude": 25.7617,
-                "longitude": -80.1918
+                "latitude": 40.7128,
+                "longitude": -74.006
               },
-              "species_count": 350,
-              "description": "World-famous wetland ecosystem",
+              "species_count": 230,
+              "description": "Urban park with diverse habitats",
               "facilities": [],
               "best_season": "",
               "accessibility": "moderate"
             },
             {
-              "name": "Bill Baggs Cape Florida",
+              "name": "Prospect Park",
               "coordinates": {
-                "latitude": 25.7617,
-                "longitude": -80.1918
-              },
-              "species_count": 200,
-              "description": "Coastal park with seabirds",
-              "facilities": [],
-              "best_season": "",
-              "accessibility": "moderate"
-            },
-            {
-              "name": "Fairchild Tropical Botanic Garden",
-              "coordinates": {
-                "latitude": 25.7617,
-                "longitude": -80.1918
+                "latitude": 40.7128,
+                "longitude": -74.006
               },
               "species_count": 180,
-              "description": "Tropical garden with exotic species",
+              "description": "Brooklyn's premier birding location",
+              "facilities": [],
+              "best_season": "",
+              "accessibility": "moderate"
+            },
+            {
+              "name": "Jamaica Bay Wildlife Refuge",
+              "coordinates": {
+                "latitude": 40.7128,
+                "longitude": -74.006
+              },
+              "species_count": 320,
+              "description": "Coastal wetland habitat",
               "facilities": [],
               "best_season": "",
               "accessibility": "moderate"
@@ -326,39 +312,32 @@
           "climate": "temperate",
           "elevation": null
         },
-        "distance_from_previous": 1757.9612250734108,
-        "travel_time": "29 hours",
-        "species_compatibility": 0.622127030126318,
+        "distance_from_previous": 11,
+        "travel_time": "35 minutes",
+        "species_compatibility": 1.0,
         "ai_compatibility_factors": {
           "location_diversity": 1.0,
-          "seasonal_advantage": 0.762616248124222,
-          "accessibility": 0.8192892037705479,
-          "ai_adjustment": 0.86063515063159
+          "seasonal_advantage": 0.7035195708337796,
+          "accessibility": 0.8327176198251481,
+          "ai_adjustment": 0.8454123968863092
         },
         "hotspots": [
           {
-            "name": "Everglades National Park",
-            "species_count": 350,
-            "description": "World-famous wetland ecosystem",
+            "name": "Prospect Park",
+            "species_count": 180,
+            "description": "Brooklyn's premier birding location",
             "ai_score": 1.0,
-            "ai_recommendation": "AI highly recommends Everglades National Park for optimal birding experience"
-          },
-          {
-            "name": "Bill Baggs Cape Florida",
-            "species_count": 200,
-            "description": "Coastal park with seabirds",
-            "ai_score": 1.0,
-            "ai_recommendation": "AI highly recommends Bill Baggs Cape Florida for optimal birding experience"
+            "ai_recommendation": "AI highly recommends Prospect Park for optimal birding experience"
           }
         ],
         "viewing_schedule": {
           "recommended_time": "6:00 AM - 9:00 AM",
-          "activity_description": "Dawn chorus and early morning activity",
+          "activity_description": "Local birding at prime hotspots",
           "target_species_focus": [
             "American Robin",
             "Northern Cardinal"
           ],
-          "estimated_duration": "2-3 hours",
+          "estimated_duration": "1-2 hours",
           "weather_considerations": "",
           "ai_optimized_time": "5:30 AM - 8:30 AM",
           "ai_optimized_duration": "3-4 hours",
@@ -373,8 +352,8 @@
         ]
       }
     ],
-    "ai_optimization_summary": "AI optimization completed for 3 stops. Total distance: 3208.4 km. Average compatibility: 0.67. Route optimized for species diversity and travel efficiency.",
-    "summary": "This 3-stop route covers 3208.4 km and targets 2 species: American Robin, Northern Cardinal. The route is optimized for species diversity and travel efficiency. Estimated total time including travel and birding: 59 hours."
+    "ai_optimization_summary": "AI optimization completed for 3 stops. Total distance: 24.0 km. Average compatibility: 1.00. Route optimized for species diversity and travel efficiency.",
+    "summary": "This 3-stop route covers 24.0 km and targets 2 species: American Robin, Northern Cardinal. The route is optimized for species diversity and travel efficiency. Estimated total time including travel and birding: 6 hours."
   },
   "content": {
     "trip_plan_markdown": "# \ud83e\udd85 AI-Powered Birding Trip Plan: New York\n\n## \ud83e\udd16 AI Analysis Summary\n*This trip plan has been enhanced with artificial intelligence to provide the most optimal birding experience.*\n\n## \ud83d\udcca Trip Overview\n- **Base Location**: New York\n- **Target Species**: American Robin, Northern Cardinal\n- **Date Range**: Spring 2024\n- **Total Stops**: 0\n- **Total Distance**: 0.0 km\n- **Estimated Time**: Unknown\n\n## \ud83e\udde0 AI Species Analysis\n\n### American Robin\n- **AI Tier Classification**: T1\n- **AI Confidence Score**: 90.0%\n- **AI Insights**: Location compatibility: 0.00, Seasonal timing: 0.15\n\n### Northern Cardinal\n- **AI Tier Classification**: T1\n- **AI Confidence Score**: 90.0%\n- **AI Insights**: Location compatibility: 0.00, Seasonal timing: 0.15\n\n## \ud83d\uddfa\ufe0f AI-Optimized Route\n\n*This route has been optimized using machine learning algorithms to maximize species diversity and minimize travel time.*\n\n## \ud83d\udccb AI-Enhanced Packing List\n*Generated based on target species and locations*\n\n- High-quality binoculars (8x42 or 10x42 recommended)\n- Field guide or birding app with AI identification\n- Camera with telephoto lens for documentation\n- Comfortable walking shoes for extended birding\n- Weather-appropriate clothing (AI-checked for season)\n- Water and energy snacks for long sessions\n- Notebook for AI-enhanced observations\n- Sun protection (hat, sunscreen)\n\n## \ud83d\udca1 AI-Generated Birding Tips\n*Personalized based on your target species and locations*\n\n- AI recommends arriving 30 minutes before sunrise for optimal activity\n- Use AI-powered bird identification apps for real-time assistance\n- AI suggests checking weather conditions before each stop\n- Consider AI-recommended hotspots for maximum species diversity\n- AI advises maintaining respectful distance from nesting birds\n- Use AI-enhanced observation techniques for better identification\n\n## \ud83d\udcdd AI-Optimized Observation Notes\n*Use this section to record your AI-enhanced observations*\n\n### Species Sighted:\n- [ ] Target species checklist\n- [ ] Unexpected species encounters\n- [ ] AI-predicted vs actual sightings\n\n### AI Insights:\n*Record how AI predictions compared to actual observations*\n\n---\n*Generated by BirdingPlanner AI - Your intelligent birding companion* \ud83e\udd16\ud83e\udd85\n",
@@ -421,5 +400,5 @@
       }
     ]
   },
-  "generated_at": "2025-07-27T18:27:53.789207"
+  "generated_at": "2025-07-27T19:46:02.079676"
 }
