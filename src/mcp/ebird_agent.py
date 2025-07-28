@@ -43,7 +43,7 @@ class EBirdAgent(BaseAgent):
         ]
     
     def execute(self, task: AgentTask) -> AgentResult:
-        """Execute eBird analysis task"""
+        """Execute the given task."""
         try:
             if task.task_type == "species_analysis":
                 return self._analyze_species(task.input_data)
@@ -53,13 +53,17 @@ class EBirdAgent(BaseAgent):
                 return self._predict_success(task.input_data)
             elif task.task_type == "rare_species_alert":
                 return self._detect_rare_species(task.input_data)
+            elif task.task_type == "trip_report_analysis":
+                return self._analyze_trip_reports(task.input_data)
+            elif task.task_type == "trip_planning_insights":
+                return self._get_trip_planning_insights(task.input_data)
             else:
-                        return AgentResult(
-            agent_name=self.name,
-            task_type=task.task_type,
-            success=False,
-            data={"error": f"Unknown task type: {task.task_type}"}
-        )
+                return AgentResult(
+                    agent_name=self.name,
+                    task_type=task.task_type,
+                    success=False,
+                    data={"error": f"Unknown task type: {task.task_type}"}
+                )
         except Exception as e:
             logger.error(f"EBirdAgent execution failed: {e}")
             return AgentResult(
@@ -208,36 +212,12 @@ class EBirdAgent(BaseAgent):
             }
         )
     
-    def _detect_rare_species(self, input_data: Dict[str, Any]) -> AgentResult:
-        """Detect rare species sightings"""
-        location = input_data.get("location")
-        days = input_data.get("days", 1)
+    def _detect_rare_species(self, input_data: Dict) -> AgentResult:
+        """Detect rare species alerts."""
+        location = input_data.get("location", "New York")
+        days = input_data.get("days", 7)
         
-        if not location:
-                    return AgentResult(
-            agent_name=self.name,
-            task_type="rare_species_alert",
-            success=False,
-            data={"error": "Missing location"}
-        )
-        
-        # Get recent observations
-        observations = self.ebird_service.get_rare_species_alerts(location, days)
-        
-        # Filter for potentially rare species (simplified logic)
-        rare_observations = self._filter_rare_species(observations)
-        
-        alerts = []
-        for obs in rare_observations:
-            alert = {
-                "species": obs.species,
-                "location": obs.location,
-                "timestamp": obs.timestamp.isoformat(),
-                "observer": obs.observer,
-                "rarity_score": self._calculate_rarity_score(obs.species),
-                "recommendation": f"Rare sighting of {obs.species} at {obs.location}"
-            }
-            alerts.append(alert)
+        alerts = self.ebird_service.get_rare_species_alerts(location, days)
         
         return AgentResult(
             agent_name=self.name,
@@ -247,9 +227,176 @@ class EBirdAgent(BaseAgent):
                 "alerts": alerts,
                 "alert_count": len(alerts),
                 "location": location,
-                "time_period": f"Last {days} day(s)"
-                }
+                "timeframe": f"{days} days"
+            }
         )
+    
+    def _analyze_trip_reports(self, input_data: Dict) -> AgentResult:
+        """Analyze trip reports for insights."""
+        location = input_data.get("location", "New York")
+        days = input_data.get("days", 30)
+        
+        trip_reports = self.ebird_service.get_trip_reports(location, days)
+        
+        # Analyze trip reports
+        analysis = {
+            "total_reports": len(trip_reports),
+            "average_species_per_trip": 0,
+            "most_productive_hotspots": [],
+            "best_timing": "Unknown",
+            "common_species": [],
+            "rare_species": [],
+            "trip_duration_patterns": {},
+            "recommendations": []
+        }
+        
+        if trip_reports:
+            # Calculate averages
+            total_species = sum(report["species_count"] for report in trip_reports)
+            analysis["average_species_per_trip"] = total_species / len(trip_reports)
+            
+            # Find most productive hotspots
+            hotspot_counts = {}
+            for report in trip_reports:
+                for hotspot in report["hotspots_visited"]:
+                    hotspot_counts[hotspot] = hotspot_counts.get(hotspot, 0) + 1
+            
+            analysis["most_productive_hotspots"] = sorted(
+                hotspot_counts.items(), key=lambda x: x[1], reverse=True
+            )[:5]
+            
+            # Find common and rare species
+            species_counts = {}
+            for report in trip_reports:
+                for species in report["species_list"]:
+                    species_counts[species] = species_counts.get(species, 0) + 1
+            
+            total_reports = len(trip_reports)
+            common_species = [s for s, c in species_counts.items() if c >= total_reports * 0.3]
+            rare_species = [s for s, c in species_counts.items() if c <= 2]
+            
+            analysis["common_species"] = common_species[:10]
+            analysis["rare_species"] = rare_species[:10]
+            
+            # Generate recommendations
+            if analysis["average_species_per_trip"] < 10:
+                analysis["recommendations"].append("Consider visiting during peak migration periods")
+            
+            if len(analysis["most_productive_hotspots"]) > 0:
+                top_hotspot = analysis["most_productive_hotspots"][0][0]
+                analysis["recommendations"].append(f"Focus on {top_hotspot} for best results")
+        
+        return AgentResult(
+            agent_name=self.name,
+            task_type="trip_report_analysis",
+            success=True,
+            data={
+                "analysis": analysis,
+                "trip_reports": trip_reports[:5],  # Return first 5 reports
+                "location": location,
+                "timeframe": f"{days} days"
+            }
+        )
+    
+    def _get_trip_planning_insights(self, input_data: Dict) -> AgentResult:
+        """Get insights for trip planning based on trip reports."""
+        location = input_data.get("location", "New York")
+        target_species = input_data.get("target_species", [])
+        date_range = input_data.get("date_range", "Spring 2024")
+        
+        insights = self.ebird_service.get_trip_insights(location, target_species, date_range)
+        
+        # Enhance insights with AI analysis
+        enhanced_insights = {
+            "basic_insights": insights,
+            "ai_recommendations": self._generate_ai_recommendations(insights, target_species),
+            "optimal_timing": self._analyze_optimal_timing(insights),
+            "hotspot_prioritization": self._prioritize_hotspots(insights),
+            "species_success_prediction": self._predict_species_success(insights, target_species)
+        }
+        
+        return AgentResult(
+            agent_name=self.name,
+            task_type="trip_planning_insights",
+            success=True,
+            data={
+                "insights": enhanced_insights,
+                "location": location,
+                "target_species": target_species,
+                "date_range": date_range
+            }
+        )
+    
+    def _generate_ai_recommendations(self, insights: Dict, target_species: List[str]) -> List[str]:
+        """Generate AI-powered recommendations based on insights."""
+        recommendations = []
+        
+        # Analyze trip frequency
+        if insights["total_trips"] < 5:
+            recommendations.append("Limited trip data available - consider expanding search area")
+        
+        # Analyze species success rates
+        low_success_species = [
+            species for species, rate in insights["target_species_success"].items() 
+            if rate < 0.3
+        ]
+        if low_success_species:
+            recommendations.append(f"Low success rate for: {', '.join(low_success_species)} - consider alternative locations")
+        
+        # Analyze timing
+        if insights["best_timing"] != "Unknown":
+            recommendations.append(f"Optimal timing: {insights['best_timing']}")
+        
+        # Analyze hotspots
+        if insights["top_hotspots"]:
+            top_hotspot = insights["top_hotspots"][0][0]
+            recommendations.append(f"Most productive hotspot: {top_hotspot}")
+        
+        return recommendations
+    
+    def _analyze_optimal_timing(self, insights: Dict) -> Dict:
+        """Analyze optimal timing for birding trips."""
+        return {
+            "best_time_of_day": insights.get("best_timing", "Early morning (6-10 AM)"),
+            "recommended_duration": "2-4 hours",
+            "seasonal_factors": "Consider migration periods",
+            "weather_considerations": "Check weather forecasts before planning"
+        }
+    
+    def _prioritize_hotspots(self, insights: Dict) -> List[Dict]:
+        """Prioritize hotspots based on insights."""
+        prioritized = []
+        for hotspot, count in insights.get("top_hotspots", []):
+            priority = "High" if count >= 5 else "Medium" if count >= 3 else "Low"
+            prioritized.append({
+                "hotspot": hotspot,
+                "visit_count": count,
+                "priority": priority,
+                "recommended_duration": "2-3 hours" if priority == "High" else "1-2 hours"
+            })
+        return prioritized
+    
+    def _predict_species_success(self, insights: Dict, target_species: List[str]) -> Dict:
+        """Predict success rates for target species."""
+        predictions = {}
+        for species in target_species:
+            success_rate = insights["target_species_success"].get(species, 0.0)
+            confidence = "High" if success_rate > 0.7 else "Medium" if success_rate > 0.4 else "Low"
+            predictions[species] = {
+                "predicted_success_rate": success_rate,
+                "confidence": confidence,
+                "recommendation": self._get_species_recommendation(success_rate)
+            }
+        return predictions
+    
+    def _get_species_recommendation(self, success_rate: float) -> str:
+        """Get recommendation based on success rate."""
+        if success_rate > 0.7:
+            return "High chance of success - plan with confidence"
+        elif success_rate > 0.4:
+            return "Moderate chance - consider multiple locations"
+        else:
+            return "Low chance - consider alternative species or locations"
     
     def _analyze_best_time(self, observations: List[EBirdObservation]) -> str:
         """Analyze best time for birding based on observations"""

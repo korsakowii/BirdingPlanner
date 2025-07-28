@@ -152,36 +152,196 @@ class EBirdService:
         self._cache_data(cache_key, observations)
         return observations
     
-    def get_hotspot_activity(self, hotspot_id: str) -> Optional[HotspotActivity]:
-        """Get activity information for a hotspot"""
-        cache_key = f"hotspot_{hotspot_id}"
-        
+    def get_hotspot_activity(self, location: str, days: int = 7) -> List[HotspotActivity]:
+        """Get hotspot activity for a location."""
+        cache_key = f"hotspot_{location}_{days}"
         if self._is_cache_valid(cache_key):
             return self.cache[cache_key][1]
+
+        region_code = self._location_to_region_code(location)
+        if not region_code:
+            logger.warning(f"Unknown location: {location}")
+            return []
+
+        raw_data = self.client.get_hotspots(region_code)
         
-        hotspot_info = self.client.get_hotspot_info(hotspot_id)
-        if not hotspot_info:
-            return None
+        activities = []
+        for hotspot in raw_data[:5]:  # Limit to top 5 hotspots
+            try:
+                # Get recent observations for this hotspot
+                hotspot_id = hotspot.get('locId', '')
+                if hotspot_id:
+                    observations = self.client.get_recent_observations(hotspot_id, days=days)
+                    
+                    activity = HotspotActivity(
+                        hotspot_id=hotspot_id,
+                        hotspot_name=hotspot.get('name', ''),
+                        recent_observations=len(observations),
+                        species_count=len(set(obs.get('comName', '') for obs in observations)),
+                        last_updated=datetime.now(),
+                        coordinates=Coordinates(
+                            latitude=hotspot.get('lat', 0),
+                            longitude=hotspot.get('lng', 0)
+                        ) if hotspot.get('lat') and hotspot.get('lng') else None,
+                        success_rate=len(observations) / 70.0  # Rough estimate
+                    )
+                    activities.append(activity)
+            except Exception as e:
+                logger.error(f"Error processing hotspot {hotspot.get('name', '')}: {e}")
+                continue
+
+        self._cache_data(cache_key, activities)
+        return activities
+    
+    def get_trip_reports(self, location: str, days: int = 30) -> List[Dict]:
+        """Get trip reports for a location (simulated based on recent observations)."""
+        cache_key = f"trip_reports_{location}_{days}"
+        if self._is_cache_valid(cache_key):
+            return self.cache[cache_key][1]
+
+        # Get recent observations to simulate trip reports
+        observations = self.get_recent_observations(location, days=days)
         
-        # Get recent observations for this hotspot
-        recent_obs = self.client.get_recent_observations(hotspot_id, days=7)
-        species_count = len(set(obs.get('comName', '') for obs in recent_obs))
+        # Group observations by date and observer to create trip reports
+        trip_reports = []
+        date_groups = {}
         
-        activity = HotspotActivity(
-            hotspot_id=hotspot_id,
-            hotspot_name=hotspot_info.get('name', ''),
-            recent_observations=len(recent_obs),
-            species_count=species_count,
-            last_updated=datetime.now(),
-            coordinates=Coordinates(
-                latitude=hotspot_info.get('latitude', 0),
-                longitude=hotspot_info.get('longitude', 0)
-            ) if hotspot_info.get('latitude') and hotspot_info.get('longitude') else None,
-            success_rate=self._calculate_success_rate(recent_obs)
-        )
+        for obs in observations:
+            date_key = obs.timestamp.strftime('%Y-%m-%d')
+            if date_key not in date_groups:
+                date_groups[date_key] = []
+            date_groups[date_key].append(obs)
         
-        self._cache_data(cache_key, activity)
-        return activity
+        # Create trip reports from grouped observations
+        for date, day_observations in date_groups.items():
+            if len(day_observations) >= 3:  # Only create reports for days with multiple observations
+                # Group by observer
+                observer_groups = {}
+                for obs in day_observations:
+                    observer = obs.observer or "Anonymous"
+                    if observer not in observer_groups:
+                        observer_groups[observer] = []
+                    observer_groups[observer].append(obs)
+                
+                for observer, obs_list in observer_groups.items():
+                    if len(obs_list) >= 2:  # Minimum 2 species for a trip report
+                        trip_report = {
+                            "date": date,
+                            "observer": observer,
+                            "location": location,
+                            "species_count": len(set(obs.species for obs in obs_list)),
+                            "total_observations": len(obs_list),
+                            "species_list": list(set(obs.species for obs in obs_list)),
+                            "hotspots_visited": list(set(obs.location for obs in obs_list)),
+                            "trip_duration": "2-4 hours",  # Estimated
+                            "weather_conditions": "Good",  # Placeholder
+                            "highlights": self._generate_trip_highlights(obs_list),
+                            "recommendations": self._generate_trip_recommendations(obs_list)
+                        }
+                        trip_reports.append(trip_report)
+        
+        self._cache_data(cache_key, trip_reports)
+        return trip_reports
+    
+    def _generate_trip_highlights(self, observations: List[EBirdObservation]) -> List[str]:
+        """Generate trip highlights from observations."""
+        highlights = []
+        
+        # Find rare species (less than 5 observations)
+        species_counts = {}
+        for obs in observations:
+            species_counts[obs.species] = species_counts.get(obs.species, 0) + 1
+        
+        rare_species = [species for species, count in species_counts.items() if count <= 2]
+        if rare_species:
+            highlights.append(f"Rare sightings: {', '.join(rare_species[:3])}")
+        
+        # Find high count observations
+        high_counts = [obs for obs in observations if obs.observation_count and obs.observation_count > 10]
+        if high_counts:
+            highlights.append(f"Large flocks observed: {len(high_counts)} species")
+        
+        # Add general highlights
+        highlights.append(f"Total species: {len(set(obs.species for obs in observations))}")
+        highlights.append(f"Multiple hotspots visited: {len(set(obs.location for obs in observations))}")
+        
+        return highlights[:5]  # Limit to 5 highlights
+    
+    def _generate_trip_recommendations(self, observations: List[EBirdObservation]) -> List[str]:
+        """Generate recommendations based on trip observations."""
+        recommendations = []
+        
+        # Analyze timing
+        morning_obs = [obs for obs in observations if 6 <= obs.timestamp.hour <= 10]
+        if len(morning_obs) > len(observations) * 0.6:
+            recommendations.append("Early morning birding was very productive")
+        
+        # Analyze locations
+        locations = set(obs.location for obs in observations)
+        if len(locations) >= 3:
+            recommendations.append("Consider visiting fewer locations for longer periods")
+        elif len(locations) == 1:
+            recommendations.append("Good focus on single location - consider expanding to nearby hotspots")
+        
+        # Analyze species diversity
+        species_count = len(set(obs.species for obs in observations))
+        if species_count >= 15:
+            recommendations.append("Excellent species diversity - consider returning during migration")
+        elif species_count <= 5:
+            recommendations.append("Low species count - try different habitats or seasons")
+        
+        return recommendations[:3]  # Limit to 3 recommendations
+    
+    def get_trip_insights(self, location: str, target_species: List[str], date_range: str) -> Dict:
+        """Get insights from trip reports for planning."""
+        trip_reports = self.get_trip_reports(location, days=30)
+        
+        insights = {
+            "total_trips": len(trip_reports),
+            "average_species_per_trip": 0,
+            "best_timing": "Unknown",
+            "top_hotspots": [],
+            "target_species_success": {},
+            "seasonal_patterns": {},
+            "recommendations": []
+        }
+        
+        if not trip_reports:
+            return insights
+        
+        # Calculate averages
+        total_species = sum(report["species_count"] for report in trip_reports)
+        insights["average_species_per_trip"] = total_species / len(trip_reports)
+        
+        # Analyze timing
+        morning_trips = [r for r in trip_reports if any("morning" in highlight.lower() for highlight in r["highlights"])]
+        if len(morning_trips) > len(trip_reports) * 0.6:
+            insights["best_timing"] = "Early morning (6-10 AM)"
+        
+        # Analyze hotspots
+        hotspot_counts = {}
+        for report in trip_reports:
+            for hotspot in report["hotspots_visited"]:
+                hotspot_counts[hotspot] = hotspot_counts.get(hotspot, 0) + 1
+        
+        insights["top_hotspots"] = sorted(hotspot_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+        
+        # Analyze target species success
+        for species in target_species:
+            success_count = 0
+            for report in trip_reports:
+                if species in report["species_list"]:
+                    success_count += 1
+            insights["target_species_success"][species] = success_count / len(trip_reports)
+        
+        # Generate recommendations
+        if insights["average_species_per_trip"] < 10:
+            insights["recommendations"].append("Consider visiting during peak migration periods")
+        
+        if len(insights["top_hotspots"]) > 0:
+            insights["recommendations"].append(f"Focus on {insights['top_hotspots'][0][0]} for best results")
+        
+        return insights
     
     def predict_success_rate(self, species: str, location: str, date: str) -> float:
         """Predict success rate for seeing a species at a location"""

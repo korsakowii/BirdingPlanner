@@ -30,6 +30,9 @@
 - Confidence scoring for species sightings
 - Optimal viewing times and conditions
 - Habitat preference analysis
+- **eBird Trip Reports Integration**: Real-world trip data analysis
+- **Community-Driven Insights**: Historical trip patterns and recommendations
+- **Success Rate Comparison**: Traditional vs. trip report based predictions
 - **Real-time eBird Data Integration**: Live observation data from global birding community
 - **Success Rate Prediction**: Historical data-based viewing probability
 - **Hotspot Activity Analysis**: Location-specific birding recommendations
@@ -291,6 +294,9 @@ python -m src.cli.main plan \
 ```bash
 # 测试eBird API集成
 python test_ebird_integration.py
+
+# 测试Trip Reports功能
+python test_trip_reports.py
 
 # 运行eBird功能演示
 python demo_ebird_integration.py

@@ -29,6 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Target Success Rate Planning**: Optimize routes to achieve specific success rate targets
 - **CLI Enhancements**: New `--min-stops` and `--success-rate` options for advanced planning
 - **Detailed Success Metrics**: Individual species success probabilities and overall trip success rates
+- **eBird Trip Reports Integration**: Real-world trip data analysis and insights
+- **Trip Report Analysis**: AI-powered analysis of historical trip patterns
+- **Trip Planning Insights**: Enhanced recommendations based on community trip reports
+- **Success Rate Comparison**: Traditional vs. trip report based predictions
+- **Hotspot Prioritization**: Data-driven hotspot recommendations from trip reports
+- **Species Success Prediction**: Improved accuracy using historical trip data
 
 ## [1.1.0] - 2024-07-27
 
