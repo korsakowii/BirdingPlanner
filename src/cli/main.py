@@ -5,7 +5,8 @@ Command-line interface for BirdingPlanner.
 import argparse
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Dict
+import os
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -64,10 +65,18 @@ Examples:
                            help='Target success rate (0.0-1.0) for species sightings')
     plan_parser.add_argument('--output', default='output', 
                            help='Output directory (default: output)')
-    plan_parser.add_argument('--verbose', '-v', action='store_true', 
-                           help='Verbose output')
     plan_parser.add_argument('--ai', action='store_true', 
-                           help='Use AI agents for enhanced planning')
+                           help='Use AI-enhanced planning with MCP server')
+    plan_parser.add_argument('--verbose', action='store_true',
+                           help='Show detailed output')
+    
+    # Add multi-day planning arguments
+    plan_parser.add_argument('--multi-day', type=int, metavar='DAYS',
+                           help='Create multi-day plan (specify number of days)')
+    plan_parser.add_argument('--max-distance-per-day', type=float, default=50.0,
+                           help='Maximum walking distance per day in km (default: 50.0)')
+    plan_parser.add_argument('--optimize-efficiency', action='store_true',
+                           help='Optimize for maximum species per distance walked')
     
     # Species command
     species_parser = subparsers.add_parser('species', help='Species information')
@@ -105,30 +114,114 @@ def plan_command(args, planner: BirdingPlanner, mcp_server: MCPServer = None):
         print("📊 Success Probability Analysis")
         print("-" * 30)
         
-        # Get recommended minimum stops
-        min_stops_info = route_service._get_recommended_min_stops(args.species, args.location)
+        min_stops_info = route_service.calculate_success_probability(args.location, args.species, 1)
         if "error" not in min_stops_info:
-            print(f"Recommended minimum stops: {min_stops_info['recommended_stops']}")
-            print(f"Reasoning: {min_stops_info['reasoning']}")
-        
-        # Show success probabilities for different stop counts
-        print("\nSuccess probabilities by stop count:")
-        for stops in range(1, min(6, args.stops + 1)):
-            success_info = route_service.calculate_success_probability(args.location, args.species, stops)
-            if "error" not in success_info:
-                overall_rate = success_info["overall_success_rate"]
-                print(f"  {stops} stop(s): {overall_rate:.1%} overall success rate")
-                if args.verbose:
-                    for species, prob in success_info["species_probabilities"].items():
-                        print(f"    {species}: {prob:.1%}")
-        print()
+            recommended_stops = min_stops_info.get("recommended_min_stops", {}).get("recommended_stops", 1)
+            reasoning = min_stops_info.get("recommended_min_stops", {}).get("reasoning", "Unknown")
+            
+            print(f"Recommended minimum stops: {recommended_stops}")
+            print(f"Reasoning: {reasoning}")
+            print()
+            
+            print("Success probabilities by stop count:")
+            for stops in range(1, 6):
+                success_info = route_service.calculate_success_probability(args.location, args.species, stops)
+                if "error" not in success_info:
+                    print(f"   {stops} stop(s): {success_info['overall_success_rate']:.1%} overall success rate")
     
-    # Determine optimal number of stops
+    # Handle multi-day planning
+    if args.multi_day:
+        print(f"🗺️ Creating {args.multi_day}-day optimized birding plan...")
+        print(f"📍 Base Location: {args.location}")
+        print(f"🎯 Target Species: {', '.join(args.species)}")
+        print(f"📅 Date Range: {args.date}")
+        print(f"🚶 Max Distance per Day: {args.max_distance_per_day} km")
+        print()
+        
+        # Create multi-day plan
+        multi_day_plan = route_service.create_multi_day_plan(
+            base_location=args.location,
+            target_species=args.species,
+            date_range=args.date,
+            days=args.multi_day,
+            max_distance_per_day=args.max_distance_per_day
+        )
+        
+        # Display multi-day plan
+        print("📋 Multi-Day Birding Plan Summary")
+        print("=" * 50)
+        
+        overall_stats = multi_day_plan['overall_stats']
+        print(f"🎯 Overall Statistics:")
+        print(f"   Total Species Expected: {overall_stats['total_species_expected']}")
+        print(f"   Total Distance: {overall_stats['total_distance']:.1f} km")
+        print(f"   Average Distance per Day: {overall_stats['average_distance_per_day']:.1f} km")
+        print(f"   Overall Success Probability: {overall_stats['overall_success_probability']:.1%}")
+        print(f"   Species Coverage: {overall_stats['species_coverage']:.1%}")
+        print(f"   Efficiency Score: {overall_stats['efficiency_score']:.1f} species per 10km")
+        print()
+        
+        # Display daily plans with detailed routes
+        for day_plan in multi_day_plan['daily_plans']:
+            print(f"📅 Day {day_plan['day']}")
+            print(f"   Expected Species: {len(day_plan['expected_species'])}")
+            print(f"   Total Distance: {day_plan['total_distance']:.1f} km")
+            print(f"   Success Probability: {day_plan['day_success_probability']:.1%}")
+            print(f"   Efficiency Score: {day_plan['efficiency_score']:.1f}")
+            
+            # Show daily summary
+            if 'daily_summary' in day_plan:
+                print(f"   Summary: {day_plan['daily_summary']}")
+            
+            # Show detailed route stops
+            if 'route_stops' in day_plan and day_plan['route_stops']:
+                print(f"   Detailed Route:")
+                for route_stop in day_plan['route_stops']:
+                    print(f"     Stop {route_stop['stop_number']}: {route_stop['hotspot_name']}")
+                    print(f"        Time: {route_stop['viewing_time']}")
+                    print(f"        Distance: {route_stop['distance_from_previous']:.1f} km")
+                    print(f"        Target Species: {', '.join(route_stop['target_species'])}")
+                    print(f"        Success Rate: {route_stop['success_probability']:.1%}")
+                    if route_stop['recommendations']:
+                        print(f"        Tips: {route_stop['recommendations'][0]}")
+                    print()
+            
+            # Show daily schedule
+            if 'daily_schedule' in day_plan and day_plan['daily_schedule']:
+                print(f"   Daily Schedule:")
+                for schedule_item in day_plan['daily_schedule']:
+                    if schedule_item['type'] == 'travel':
+                        print(f"     {schedule_item['time']}: {schedule_item['activity']} ({schedule_item['duration']})")
+                    else:
+                        print(f"     {schedule_item['time']}: {schedule_item['activity']} ({schedule_item['duration']})")
+                        if schedule_item['target_species']:
+                            print(f"        Target: {', '.join(schedule_item['target_species'])}")
+            print()
+        
+        # Save multi-day plan
+        output_dir = args.output
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Save as JSON for programmatic access
+        import json
+        with open(os.path.join(output_dir, 'multi_day_plan.json'), 'w') as f:
+            json.dump(multi_day_plan, f, indent=2, default=str)
+        
+        # Generate markdown report
+        markdown_content = generate_multi_day_markdown(multi_day_plan)
+        with open(os.path.join(output_dir, 'multi_day_plan.md'), 'w') as f:
+            f.write(markdown_content)
+        
+        print(f"✅ Multi-day plan saved to {output_dir}/ directory")
+        print(f"📁 Files generated:")
+        print(f"   - {output_dir}/multi_day_plan.md (Complete plan report)")
+        print(f"   - {output_dir}/multi_day_plan.json (Structured data)")
+        
+        return
+    
     optimal_stops = args.stops
     if args.success_rate:
-        # Use success target optimization
-        print(f"🎯 Optimizing for {args.success_rate:.0%} success rate...")
-        # Find minimum stops that meet target
+        # Logic to find minimum stops that meet target success rate
         for stops in range(1, 6):
             success_info = route_service.calculate_success_probability(args.location, args.species, stops)
             if "error" not in success_info and success_info["overall_success_rate"] >= args.success_rate:
@@ -137,8 +230,7 @@ def plan_command(args, planner: BirdingPlanner, mcp_server: MCPServer = None):
         else:
             optimal_stops = 5  # Use maximum if target can't be met
     elif args.min_stops:
-        optimal_stops = min_stops_info.get("recommended_stops", 1)
-        print(f"🎯 Using minimum {optimal_stops} stops for high success probability...")
+        optimal_stops = min_stops_info.get("recommended_min_stops", {}).get("recommended_stops", 1)
     
     # Create trip request
     request = TripRequest(
@@ -309,6 +401,123 @@ def mcp_command(args, mcp_server: MCPServer):
             print()
     else:
         print("❌ Please specify an MCP operation (--interactive, --status, --health, --capabilities)")
+
+
+def generate_multi_day_markdown(multi_day_plan: Dict) -> str:
+    """Generate markdown report for multi-day birding plan."""
+    base_location = multi_day_plan['base_location']
+    target_species = multi_day_plan['target_species']
+    date_range = multi_day_plan['date_range']
+    total_days = multi_day_plan['total_days']
+    overall_stats = multi_day_plan['overall_stats']
+    daily_plans = multi_day_plan['daily_plans']
+    
+    markdown = f"""# Multi-Day Birding Plan: {base_location}
+
+## 🦅 Plan Overview
+- **Base Location**: {base_location}
+- **Target Species**: {', '.join(target_species)}
+- **Date Range**: {date_range}
+- **Total Days**: {total_days}
+- **Total Species Expected**: {overall_stats['total_species_expected']}
+- **Total Distance**: {overall_stats['total_distance']:.1f} km
+- **Average Distance per Day**: {overall_stats['average_distance_per_day']:.1f} km
+- **Overall Success Probability**: {overall_stats['overall_success_probability']:.1%}
+- **Species Coverage**: {overall_stats['species_coverage']:.1%}
+- **Efficiency Score**: {overall_stats['efficiency_score']:.1f} species per 10km
+
+## 🎯 Optimization Strategy
+This plan is optimized for:
+- **Maximum species diversity** with minimal walking distance
+- **Efficient route planning** to minimize travel time between hotspots
+- **High success probability** based on species availability and habitat compatibility
+- **Balanced daily schedules** to avoid fatigue while maximizing sightings
+
+## 📅 Daily Plans
+
+"""
+    
+    for day_plan in daily_plans:
+        day_num = day_plan['day']
+        expected_species = day_plan['expected_species']
+        total_distance = day_plan['total_distance']
+        success_prob = day_plan['day_success_probability']
+        efficiency = day_plan['efficiency_score']
+        hotspots = day_plan['hotspots']
+        
+        markdown += f"""### Day {day_num}
+
+**Daily Statistics:**
+- **Expected Species**: {len(expected_species)}
+- **Total Distance**: {total_distance:.1f} km
+- **Success Probability**: {success_prob:.1%}
+- **Efficiency Score**: {efficiency:.1f}
+
+**Target Species for Today:**
+"""
+        
+        for species in expected_species:
+            markdown += f"- {species}\n"
+        
+        markdown += "\n**Hotspots to Visit:**\n"
+        
+        for i, hotspot_info in enumerate(hotspots, 1):
+            hotspot = hotspot_info['hotspot']
+            distance = hotspot_info['distance_from_previous']
+            unique_species = hotspot_info['unique_species']
+            
+            markdown += f"\n#### {i}. {hotspot['name']}\n"
+            if distance > 0:
+                markdown += f"- **Distance from previous**: {distance:.1f} km\n"
+            if unique_species:
+                markdown += f"- **Key species**: {', '.join(unique_species)}\n"
+            if hotspot.get('description'):
+                markdown += f"- **Description**: {hotspot['description']}\n"
+        
+        markdown += "\n**Daily Tips:**\n"
+        markdown += "- Start early for best birding conditions\n"
+        markdown += "- Take breaks between hotspots to rest and observe\n"
+        markdown += "- Keep detailed notes of species seen\n"
+        markdown += "- Check weather conditions before starting\n\n"
+    
+    markdown += """## 📋 Packing List
+- Binoculars (8x42 or 10x42 recommended)
+- Field guide or birding app
+- Camera with telephoto lens
+- Comfortable walking shoes
+- Weather-appropriate clothing
+- Water and energy snacks
+- Notebook for observations
+- Sun protection (hat, sunscreen)
+- First aid kit
+- Mobile phone with GPS
+
+## 💡 Multi-Day Birding Tips
+- **Pace yourself**: Don't try to see everything on the first day
+- **Keep records**: Document species seen each day to track progress
+- **Be flexible**: Adjust plans based on weather and conditions
+- **Rest properly**: Get adequate sleep between birding days
+- **Stay hydrated**: Drink plenty of water during long days
+- **Share experiences**: Connect with other birders in the area
+
+## 📊 Success Tracking
+Use this section to track your progress:
+
+### Species Checklist
+"""
+    
+    for species in target_species:
+        markdown += f"- [ ] {species}\n"
+    
+    markdown += """
+### Daily Notes
+*Use this space to record your observations, photos taken, and memorable moments.*
+
+---
+*Generated by BirdingPlanner - Your AI-powered birding companion* 🦅
+"""
+    
+    return markdown
 
 
 def main():

@@ -288,6 +288,25 @@ python -m src.cli.main plan \
   --stops 5 \
   --ai \
   --output "custom_trip"
+
+# 多日深度观鸟规划
+python -m src.cli.main plan \
+  --species "American Robin" "Northern Cardinal" "Blue Jay" "Red-winged Blackbird" \
+  --location "New York" \
+  --date "Spring 2024" \
+  --multi-day 3 \
+  --max-distance-per-day 30 \
+  --output "multi_day_trip"
+
+# 优化效率的多日规划
+python -m src.cli.main plan \
+  --species "American Robin" "Northern Cardinal" "Blue Jay" \
+  --location "New York" \
+  --date "Spring 2024" \
+  --multi-day 5 \
+  --max-distance-per-day 25 \
+  --optimize-efficiency \
+  --output "efficient_trip"
 ```
 
 #### **eBird集成测试**

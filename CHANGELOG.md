@@ -35,6 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Success Rate Comparison**: Traditional vs. trip report based predictions
 - **Hotspot Prioritization**: Data-driven hotspot recommendations from trip reports
 - **Species Success Prediction**: Improved accuracy using historical trip data
+- **Multi-Day Birding Planning**: Optimized multi-day routes for extended birding trips
+- **Distance-Based Optimization**: Minimize walking distance while maximizing species diversity
+- **Daily Route Planning**: Intelligent daily schedules with hotspot prioritization
+- **Efficiency Scoring**: Measure species per distance walked for optimal planning
+- **Comprehensive Multi-Day Reports**: Detailed daily plans with success probabilities
 
 ## [1.1.0] - 2024-07-27
 

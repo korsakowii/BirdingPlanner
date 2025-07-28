@@ -3,6 +3,7 @@ Route service for BirdingPlanner.
 Handles route optimization and location management.
 """
 
+import math
 import random
 from typing import Dict, List, Optional
 from ..models.route import Route, RouteStop, Location, Coordinates, Hotspot, ViewingSchedule
@@ -437,4 +438,390 @@ class RouteService:
                 return self.optimize_route(base_location, target_species, date_range, num_stops)
         
         # If we can't meet target with 5 stops, return best possible
-        return self.optimize_route(base_location, target_species, date_range, 5) 
+        return self.optimize_route(base_location, target_species, date_range, 5)
+    
+    def create_multi_day_plan(self, base_location: str, target_species: List[str], 
+                             date_range: str, days: int = 3, max_distance_per_day: float = 50.0) -> Dict:
+        """Create a multi-day birding plan optimized for maximum species with minimal walking."""
+        print(f"🗺️ Creating {days}-day optimized birding plan...")
+        
+        # Get all available hotspots in the area
+        all_hotspots = self._get_all_hotspots_in_area(base_location, max_distance_per_day * days)
+        
+        # Analyze species availability at each hotspot
+        hotspot_species_analysis = {}
+        for hotspot in all_hotspots:
+            species_scores = {}
+            for species in target_species:
+                score = self.get_species_compatibility_score(species, hotspot['name'])
+                species_scores[species] = score
+            hotspot_species_analysis[hotspot['name']] = {
+                'hotspot': hotspot,
+                'species_scores': species_scores,
+                'total_score': sum(species_scores.values()),
+                'unique_species': [s for s, score in species_scores.items() if score > 0.3]
+            }
+        
+        # Sort hotspots by total species score
+        sorted_hotspots = sorted(
+            hotspot_species_analysis.items(),
+            key=lambda x: x[1]['total_score'],
+            reverse=True
+        )
+        
+        # Create daily plans
+        daily_plans = []
+        remaining_hotspots = sorted_hotspots.copy()
+        daily_distance_budget = max_distance_per_day
+        
+        for day in range(1, days + 1):
+            print(f"📅 Planning Day {day}...")
+            
+            day_plan = self._create_optimized_day_plan(
+                remaining_hotspots, 
+                daily_distance_budget, 
+                day, 
+                base_location,
+                target_species
+            )
+            
+            daily_plans.append(day_plan)
+            
+            # Remove visited hotspots from remaining list
+            visited_hotspots = [h['hotspot']['name'] for h in day_plan['hotspots']]
+            remaining_hotspots = [
+                (name, data) for name, data in remaining_hotspots 
+                if name not in visited_hotspots
+            ]
+        
+        # Calculate overall statistics
+        total_species_seen = set()
+        total_distance = 0
+        total_success_probability = 1.0
+        
+        for day_plan in daily_plans:
+            total_species_seen.update(day_plan['expected_species'])
+            total_distance += day_plan['total_distance']
+            total_success_probability *= day_plan['day_success_probability']
+        
+        multi_day_plan = {
+            'base_location': base_location,
+            'target_species': target_species,
+            'date_range': date_range,
+            'total_days': days,
+            'daily_plans': daily_plans,
+            'overall_stats': {
+                'total_species_expected': len(total_species_seen),
+                'total_distance': total_distance,
+                'average_distance_per_day': total_distance / days,
+                'overall_success_probability': total_success_probability,
+                'species_coverage': len(total_species_seen) / len(target_species),
+                'efficiency_score': len(total_species_seen) / (total_distance / 10)  # species per 10km
+            }
+        }
+        
+        return multi_day_plan
+    
+    def _create_optimized_day_plan(self, available_hotspots: List, max_distance: float, 
+                                  day_number: int, base_location: str, target_species: List[str]) -> Dict:
+        """Create an optimized plan for a single day."""
+        if not available_hotspots:
+            return self._create_empty_day_plan(day_number, base_location)
+        
+        # Start with the highest scoring hotspot
+        best_hotspot_name, best_hotspot_data = available_hotspots[0]
+        best_hotspot = best_hotspot_data['hotspot']
+        
+        # Find nearby hotspots that complement the best one
+        nearby_hotspots = []
+        current_distance = 0
+        
+        for hotspot_name, hotspot_data in available_hotspots[1:]:
+            hotspot = hotspot_data['hotspot']
+            
+            # Calculate distance from current location
+            if nearby_hotspots:
+                last_hotspot = nearby_hotspots[-1]['hotspot']
+                distance = self._calculate_distance(
+                    last_hotspot['coordinates'], 
+                    hotspot['coordinates']
+                )
+            else:
+                distance = self._calculate_distance(
+                    best_hotspot['coordinates'], 
+                    hotspot['coordinates']
+                )
+            
+            # Check if adding this hotspot would exceed daily distance limit
+            if current_distance + distance <= max_distance:
+                # Check if this hotspot adds unique species
+                unique_species = [
+                    species for species in hotspot_data['unique_species']
+                    if species not in [s for h in nearby_hotspots for s in h['unique_species']]
+                ]
+                
+                if unique_species or len(nearby_hotspots) < 2:  # Allow up to 3 hotspots per day
+                    nearby_hotspots.append({
+                        'hotspot': hotspot,
+                        'distance_from_previous': distance,
+                        'unique_species': unique_species,
+                        'species_scores': hotspot_data['species_scores']
+                    })
+                    current_distance += distance
+        
+        # Create day plan
+        day_hotspots = [{'hotspot': best_hotspot, 'distance_from_previous': 0, 
+                        'unique_species': best_hotspot_data['unique_species'],
+                        'species_scores': best_hotspot_data['species_scores']}] + nearby_hotspots
+        
+        # Calculate day statistics and create detailed route
+        expected_species = set()
+        day_success_probability = 1.0
+        total_distance = sum(h['distance_from_previous'] for h in day_hotspots)
+        
+        # Create detailed route plan for the day
+        route_stops = []
+        current_time = "6:00 AM"  # Start early for best birding
+        
+        for i, hotspot_info in enumerate(day_hotspots):
+            hotspot = hotspot_info['hotspot']
+            distance = hotspot_info['distance_from_previous']
+            unique_species = hotspot_info['unique_species']
+            species_scores = hotspot_info['species_scores']
+            
+            # Calculate travel time
+            if distance > 0:
+                travel_time = self._calculate_travel_time(distance)
+            else:
+                travel_time = "0 minutes"
+            
+            # Determine optimal viewing time for this hotspot
+            if i == 0:
+                viewing_time = "6:00 AM - 9:00 AM"  # First stop - dawn chorus
+            elif i == 1:
+                viewing_time = "9:30 AM - 12:00 PM"  # Second stop - mid-morning
+            else:
+                viewing_time = "12:30 PM - 3:00 PM"  # Later stops - afternoon
+            
+            # Calculate success probability for this hotspot
+            hotspot_prob = sum(species_scores.values()) / len(target_species)
+            day_success_probability *= (0.7 + 0.3 * hotspot_prob)
+            
+            # Get target species for this hotspot (species with high scores)
+            target_species_for_hotspot = [
+                species for species, score in species_scores.items() 
+                if score > 0.3 and species in target_species
+            ]
+            
+            # Add to expected species
+            expected_species.update(target_species_for_hotspot)
+            
+            # Create route stop details
+            route_stop = {
+                'stop_number': i + 1,
+                'hotspot_name': hotspot['name'],
+                'coordinates': hotspot['coordinates'],
+                'description': hotspot.get('description', ''),
+                'distance_from_previous': distance,
+                'travel_time': travel_time,
+                'viewing_time': viewing_time,
+                'target_species': target_species_for_hotspot,
+                'species_scores': species_scores,
+                'success_probability': hotspot_prob,
+                'recommendations': self._generate_hotspot_recommendations(hotspot, target_species_for_hotspot),
+                'facilities': self._get_hotspot_facilities(hotspot),
+                'best_approach': self._get_best_approach(hotspot, target_species_for_hotspot)
+            }
+            
+            route_stops.append(route_stop)
+        
+        # Calculate efficiency score
+        efficiency_score = len(expected_species) / (total_distance / 10) if total_distance > 0 else len(expected_species)
+        
+        return {
+            'day': day_number,
+            'hotspots': day_hotspots,
+            'expected_species': list(expected_species),
+            'total_distance': total_distance,
+            'day_success_probability': day_success_probability,
+            'efficiency_score': efficiency_score,
+            'route_stops': route_stops,
+            'daily_schedule': self._create_daily_schedule(route_stops),
+            'daily_summary': self._create_daily_summary(day_number, route_stops, expected_species, total_distance)
+        }
+    
+    def _generate_hotspot_recommendations(self, hotspot: Dict, target_species: List[str]) -> List[str]:
+        """Generate specific recommendations for a hotspot."""
+        recommendations = []
+        
+        # General recommendations
+        recommendations.append("Arrive early for best birding conditions")
+        recommendations.append("Bring binoculars and field guide")
+        recommendations.append("Move slowly and quietly to avoid startling birds")
+        
+        # Species-specific recommendations
+        if len(target_species) > 0:
+            recommendations.append(f"Focus on: {', '.join(target_species)}")
+        
+        # Habitat-specific recommendations
+        if "park" in hotspot.get('description', '').lower():
+            recommendations.append("Check both open areas and wooded sections")
+        elif "wetland" in hotspot.get('description', '').lower():
+            recommendations.append("Bring waterproof footwear")
+            recommendations.append("Check both water edges and marsh areas")
+        elif "coastal" in hotspot.get('description', '').lower():
+            recommendations.append("Check tide times for optimal viewing")
+            recommendations.append("Look for both shorebirds and seabirds")
+        
+        return recommendations
+    
+    def _get_hotspot_facilities(self, hotspot: Dict) -> List[str]:
+        """Get available facilities at the hotspot."""
+        facilities = ["Parking available", "Walking trails"]
+        
+        # Add facilities based on hotspot type
+        if "park" in hotspot.get('description', '').lower():
+            facilities.extend(["Restrooms", "Picnic areas", "Information center"])
+        elif "refuge" in hotspot.get('description', '').lower():
+            facilities.extend(["Visitor center", "Observation platforms", "Educational displays"])
+        
+        return facilities
+    
+    def _get_best_approach(self, hotspot: Dict, target_species: List[str]) -> str:
+        """Get the best approach strategy for the hotspot."""
+        if "park" in hotspot.get('description', '').lower():
+            return "Start at the main entrance and work your way through different habitats"
+        elif "wetland" in hotspot.get('description', '').lower():
+            return "Begin at observation platforms, then walk the perimeter trails"
+        elif "coastal" in hotspot.get('description', '').lower():
+            return "Check the beach first, then explore inland areas"
+        else:
+            return "Start at the main viewing area and explore systematically"
+    
+    def _create_daily_schedule(self, route_stops: List[Dict]) -> List[Dict]:
+        """Create a detailed daily schedule."""
+        schedule = []
+        current_time = "6:00 AM"
+        
+        for stop in route_stops:
+            # Add travel time if not first stop
+            if stop['stop_number'] > 1:
+                schedule.append({
+                    'time': current_time,
+                    'activity': f"Travel to {stop['hotspot_name']}",
+                    'duration': stop['travel_time'],
+                    'type': 'travel'
+                })
+                # Update current time (simplified)
+                current_time = stop['viewing_time'].split(' - ')[0]
+            
+            # Add birding time
+            schedule.append({
+                'time': current_time,
+                'activity': f"Birding at {stop['hotspot_name']}",
+                'duration': "2-3 hours",
+                'type': 'birding',
+                'target_species': stop['target_species'],
+                'recommendations': stop['recommendations'][:2]  # Top 2 recommendations
+            })
+            
+            # Update current time for next stop
+            current_time = stop['viewing_time'].split(' - ')[1]
+        
+        return schedule
+    
+    def _create_daily_summary(self, day_number: int, route_stops: List[Dict], 
+                            expected_species: set, total_distance: float) -> str:
+        """Create a summary for the day."""
+        summary = f"Day {day_number} focuses on {len(route_stops)} key hotspots "
+        summary += f"covering {total_distance:.1f} km. "
+        summary += f"Target species include {', '.join(list(expected_species)[:3])}"
+        if len(expected_species) > 3:
+            summary += f" and {len(expected_species) - 3} more species. "
+        else:
+            summary += ". "
+        
+        summary += "The route is optimized for maximum species diversity with minimal travel time. "
+        summary += "Each hotspot offers unique habitat and species combinations."
+        
+        return summary
+    
+    def _create_empty_day_plan(self, day_number: int, base_location: str) -> Dict:
+        """Create an empty day plan when no hotspots are available."""
+        return {
+            'day': day_number,
+            'hotspots': [],
+            'expected_species': [],
+            'total_distance': 0,
+            'day_success_probability': 0.0,
+            'efficiency_score': 0.0
+        }
+    
+    def _get_all_hotspots_in_area(self, base_location: str, max_radius: float) -> List[Dict]:
+        """Get all hotspots within a certain radius of the base location."""
+        base_loc = self.get_location(base_location)
+        if not base_loc:
+            return []
+        
+        base_coords = base_loc.coordinates
+        all_hotspots = []
+        
+        # Get hotspots from all available locations
+        for location_name, location_data in self._location_database.items():
+            distance = self._calculate_distance(base_coords, location_data.coordinates)
+            
+            if distance <= max_radius:
+                # Add the main location as a hotspot
+                all_hotspots.append({
+                    'name': location_name,
+                    'coordinates': location_data.coordinates,
+                    'description': location_data.name,
+                    'distance_from_base': distance
+                })
+                
+                # Add nearby hotspots (simulated)
+                nearby_hotspots = self._generate_nearby_hotspots(location_data.coordinates, location_name)
+                all_hotspots.extend(nearby_hotspots)
+        
+        return all_hotspots
+    
+    def _generate_nearby_hotspots(self, base_coords: Coordinates, location_name: str) -> List[Dict]:
+        """Generate nearby hotspots around a base location."""
+        nearby_hotspots = []
+        
+        # Generate 3-5 nearby hotspots with slight coordinate variations
+        for i in range(3, 6):
+            # Add small random variations to coordinates
+            lat_variation = (i - 2) * 0.01  # ~1km increments
+            lng_variation = (i - 2) * 0.01
+            
+            hotspot_coords = Coordinates(
+                latitude=base_coords.latitude + lat_variation,
+                longitude=base_coords.longitude + lng_variation
+            )
+            
+            nearby_hotspots.append({
+                'name': f"{location_name} Hotspot {i}",
+                'coordinates': hotspot_coords,
+                'description': f"Secondary birding location near {location_name}",
+                'distance_from_base': self._calculate_distance(base_coords, hotspot_coords)
+            })
+        
+        return nearby_hotspots
+    
+    def _calculate_distance(self, coord1: Coordinates, coord2: Coordinates) -> float:
+        """Calculate distance between two geographic coordinates using the Haversine formula."""
+        R = 6371.0 # Radius of Earth in km
+        lat1, lon1 = coord1.latitude, coord1.longitude
+        lat2, lon2 = coord2.latitude, coord2.longitude
+        
+        d_lat = (lat2 - lat1) * math.pi / 180.0
+        d_lon = (lon2 - lon1) * math.pi / 180.0
+        
+        a = math.sin(d_lat / 2) * math.sin(d_lat / 2) + \
+            math.cos(lat1 * math.pi / 180.0) * math.cos(lat2 * math.pi / 180.0) * \
+            math.sin(d_lon / 2) * math.sin(d_lon / 2)
+        
+        c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+        distance = R * c # Distance in km
+        return distance 

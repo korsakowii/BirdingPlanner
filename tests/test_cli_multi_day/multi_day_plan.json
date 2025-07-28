@@ -1,0 +1,126 @@
+{
+  "base_location": "New York",
+  "target_species": [
+    "American Robin",
+    "Northern Cardinal",
+    "Blue Jay"
+  ],
+  "date_range": "Spring 2024",
+  "total_days": 3,
+  "daily_plans": [
+    {
+      "day": 1,
+      "hotspots": [
+        {
+          "hotspot": {
+            "name": "New York",
+            "coordinates": "Coordinates(latitude=40.7128, longitude=-74.006)",
+            "description": "New York",
+            "distance_from_base": 0.0
+          },
+          "distance_from_previous": 0,
+          "unique_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.9,
+            "Northern Cardinal": 0.8,
+            "Blue Jay": 0.85
+          }
+        },
+        {
+          "hotspot": {
+            "name": "New York Hotspot 3",
+            "coordinates": "Coordinates(latitude=40.7228, longitude=-73.996)",
+            "description": "Secondary birding location near New York",
+            "distance_from_base": 1.3952462186978756
+          },
+          "distance_from_previous": 1.3952462186978756,
+          "unique_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          }
+        },
+        {
+          "hotspot": {
+            "name": "New York Hotspot 4",
+            "coordinates": "Coordinates(latitude=40.732800000000005, longitude=-73.986)",
+            "description": "Secondary birding location near New York",
+            "distance_from_base": 2.79041595024899
+          },
+          "distance_from_previous": 1.3951697436428625,
+          "unique_species": [],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          }
+        }
+      ],
+      "expected_species": [
+        "Blue Jay",
+        "Northern Cardinal",
+        "American Robin"
+      ],
+      "total_distance": 2.790415962340738,
+      "day_success_probability": 0.6899875,
+      "efficiency_score": 10.751085287956325
+    },
+    {
+      "day": 2,
+      "hotspots": [
+        {
+          "hotspot": {
+            "name": "New York Hotspot 5",
+            "coordinates": "Coordinates(latitude=40.7428, longitude=-73.976)",
+            "description": "Secondary birding location near New York",
+            "distance_from_base": 4.18550917434794
+          },
+          "distance_from_previous": 0,
+          "unique_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          }
+        }
+      ],
+      "expected_species": [
+        "Blue Jay",
+        "Northern Cardinal",
+        "American Robin"
+      ],
+      "total_distance": 0,
+      "day_success_probability": 0.85,
+      "efficiency_score": 3
+    },
+    {
+      "day": 3,
+      "hotspots": [],
+      "expected_species": [],
+      "total_distance": 0,
+      "day_success_probability": 0.0,
+      "efficiency_score": 0.0
+    }
+  ],
+  "overall_stats": {
+    "total_species_expected": 3,
+    "total_distance": 2.790415962340738,
+    "average_distance_per_day": 0.9301386541135793,
+    "overall_success_probability": 0.0,
+    "species_coverage": 1.0,
+    "efficiency_score": 10.751085287956325
+  }
+}

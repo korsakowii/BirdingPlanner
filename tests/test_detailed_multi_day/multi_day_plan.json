@@ -1,0 +1,332 @@
+{
+  "base_location": "New York",
+  "target_species": [
+    "American Robin",
+    "Northern Cardinal",
+    "Blue Jay"
+  ],
+  "date_range": "Spring 2024",
+  "total_days": 3,
+  "daily_plans": [
+    {
+      "day": 1,
+      "hotspots": [
+        {
+          "hotspot": {
+            "name": "New York",
+            "coordinates": "Coordinates(latitude=40.7128, longitude=-74.006)",
+            "description": "New York",
+            "distance_from_base": 0.0
+          },
+          "distance_from_previous": 0,
+          "unique_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.9,
+            "Northern Cardinal": 0.8,
+            "Blue Jay": 0.85
+          }
+        },
+        {
+          "hotspot": {
+            "name": "New York Hotspot 3",
+            "coordinates": "Coordinates(latitude=40.7228, longitude=-73.996)",
+            "description": "Secondary birding location near New York",
+            "distance_from_base": 1.3952462186978756
+          },
+          "distance_from_previous": 1.3952462186978756,
+          "unique_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          }
+        },
+        {
+          "hotspot": {
+            "name": "New York Hotspot 4",
+            "coordinates": "Coordinates(latitude=40.732800000000005, longitude=-73.986)",
+            "description": "Secondary birding location near New York",
+            "distance_from_base": 2.79041595024899
+          },
+          "distance_from_previous": 1.3951697436428625,
+          "unique_species": [],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          }
+        }
+      ],
+      "expected_species": [
+        "Northern Cardinal",
+        "Blue Jay",
+        "American Robin"
+      ],
+      "total_distance": 2.790415962340738,
+      "day_success_probability": 0.6899875,
+      "efficiency_score": 10.751085287956325,
+      "route_stops": [
+        {
+          "stop_number": 1,
+          "hotspot_name": "New York",
+          "coordinates": "Coordinates(latitude=40.7128, longitude=-74.006)",
+          "description": "New York",
+          "distance_from_previous": 0,
+          "travel_time": "0 minutes",
+          "viewing_time": "6:00 AM - 9:00 AM",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.9,
+            "Northern Cardinal": 0.8,
+            "Blue Jay": 0.85
+          },
+          "success_probability": 0.8500000000000001,
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide",
+            "Move slowly and quietly to avoid startling birds",
+            "Focus on: American Robin, Northern Cardinal, Blue Jay"
+          ],
+          "facilities": [
+            "Parking available",
+            "Walking trails"
+          ],
+          "best_approach": "Start at the main viewing area and explore systematically"
+        },
+        {
+          "stop_number": 2,
+          "hotspot_name": "New York Hotspot 3",
+          "coordinates": "Coordinates(latitude=40.7228, longitude=-73.996)",
+          "description": "Secondary birding location near New York",
+          "distance_from_previous": 1.3952462186978756,
+          "travel_time": "0 hours",
+          "viewing_time": "9:30 AM - 12:00 PM",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          },
+          "success_probability": 0.5,
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide",
+            "Move slowly and quietly to avoid startling birds",
+            "Focus on: American Robin, Northern Cardinal, Blue Jay"
+          ],
+          "facilities": [
+            "Parking available",
+            "Walking trails"
+          ],
+          "best_approach": "Start at the main viewing area and explore systematically"
+        },
+        {
+          "stop_number": 3,
+          "hotspot_name": "New York Hotspot 4",
+          "coordinates": "Coordinates(latitude=40.732800000000005, longitude=-73.986)",
+          "description": "Secondary birding location near New York",
+          "distance_from_previous": 1.3951697436428625,
+          "travel_time": "0 hours",
+          "viewing_time": "12:30 PM - 3:00 PM",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          },
+          "success_probability": 0.5,
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide",
+            "Move slowly and quietly to avoid startling birds",
+            "Focus on: American Robin, Northern Cardinal, Blue Jay"
+          ],
+          "facilities": [
+            "Parking available",
+            "Walking trails"
+          ],
+          "best_approach": "Start at the main viewing area and explore systematically"
+        }
+      ],
+      "daily_schedule": [
+        {
+          "time": "6:00 AM",
+          "activity": "Birding at New York",
+          "duration": "2-3 hours",
+          "type": "birding",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide"
+          ]
+        },
+        {
+          "time": "9:00 AM",
+          "activity": "Travel to New York Hotspot 3",
+          "duration": "0 hours",
+          "type": "travel"
+        },
+        {
+          "time": "9:30 AM",
+          "activity": "Birding at New York Hotspot 3",
+          "duration": "2-3 hours",
+          "type": "birding",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide"
+          ]
+        },
+        {
+          "time": "12:00 PM",
+          "activity": "Travel to New York Hotspot 4",
+          "duration": "0 hours",
+          "type": "travel"
+        },
+        {
+          "time": "12:30 PM",
+          "activity": "Birding at New York Hotspot 4",
+          "duration": "2-3 hours",
+          "type": "birding",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide"
+          ]
+        }
+      ],
+      "daily_summary": "Day 1 focuses on 3 key hotspots covering 2.8 km. Target species include Northern Cardinal, Blue Jay, American Robin. The route is optimized for maximum species diversity with minimal travel time. Each hotspot offers unique habitat and species combinations."
+    },
+    {
+      "day": 2,
+      "hotspots": [
+        {
+          "hotspot": {
+            "name": "New York Hotspot 5",
+            "coordinates": "Coordinates(latitude=40.7428, longitude=-73.976)",
+            "description": "Secondary birding location near New York",
+            "distance_from_base": 4.18550917434794
+          },
+          "distance_from_previous": 0,
+          "unique_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          }
+        }
+      ],
+      "expected_species": [
+        "Northern Cardinal",
+        "Blue Jay",
+        "American Robin"
+      ],
+      "total_distance": 0,
+      "day_success_probability": 0.85,
+      "efficiency_score": 3,
+      "route_stops": [
+        {
+          "stop_number": 1,
+          "hotspot_name": "New York Hotspot 5",
+          "coordinates": "Coordinates(latitude=40.7428, longitude=-73.976)",
+          "description": "Secondary birding location near New York",
+          "distance_from_previous": 0,
+          "travel_time": "0 minutes",
+          "viewing_time": "6:00 AM - 9:00 AM",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "species_scores": {
+            "American Robin": 0.5,
+            "Northern Cardinal": 0.5,
+            "Blue Jay": 0.5
+          },
+          "success_probability": 0.5,
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide",
+            "Move slowly and quietly to avoid startling birds",
+            "Focus on: American Robin, Northern Cardinal, Blue Jay"
+          ],
+          "facilities": [
+            "Parking available",
+            "Walking trails"
+          ],
+          "best_approach": "Start at the main viewing area and explore systematically"
+        }
+      ],
+      "daily_schedule": [
+        {
+          "time": "6:00 AM",
+          "activity": "Birding at New York Hotspot 5",
+          "duration": "2-3 hours",
+          "type": "birding",
+          "target_species": [
+            "American Robin",
+            "Northern Cardinal",
+            "Blue Jay"
+          ],
+          "recommendations": [
+            "Arrive early for best birding conditions",
+            "Bring binoculars and field guide"
+          ]
+        }
+      ],
+      "daily_summary": "Day 2 focuses on 1 key hotspots covering 0.0 km. Target species include Northern Cardinal, Blue Jay, American Robin. The route is optimized for maximum species diversity with minimal travel time. Each hotspot offers unique habitat and species combinations."
+    },
+    {
+      "day": 3,
+      "hotspots": [],
+      "expected_species": [],
+      "total_distance": 0,
+      "day_success_probability": 0.0,
+      "efficiency_score": 0.0
+    }
+  ],
+  "overall_stats": {
+    "total_species_expected": 3,
+    "total_distance": 2.790415962340738,
+    "average_distance_per_day": 0.9301386541135793,
+    "overall_success_probability": 0.0,
+    "species_coverage": 1.0,
+    "efficiency_score": 10.751085287956325
+  }
+}
