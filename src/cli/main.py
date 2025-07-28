@@ -26,6 +26,12 @@ Examples:
   # Create a basic trip plan
   python -m src.cli.main plan --species "American Robin" "Northern Cardinal" --location "New York" --date "Spring 2024"
   
+  # Use minimum stops for high success probability
+  python -m src.cli.main plan --species "American Robin" "Northern Cardinal" --location "New York" --date "Spring 2024" --min-stops --verbose
+  
+  # Target specific success rate
+  python -m src.cli.main plan --species "Cerulean Warbler" --location "New York" --date "Spring 2024" --success-rate 0.8
+  
   # Create a trip plan with custom output directory
   python -m src.cli.main plan --species "Cerulean Warbler" --location "Boston" --date "Summer 2024" --output "my_trip"
   
@@ -52,6 +58,10 @@ Examples:
                            help='Date range for the trip')
     plan_parser.add_argument('--stops', type=int, default=3, 
                            help='Maximum number of stops (default: 3)')
+    plan_parser.add_argument('--min-stops', action='store_true',
+                           help='Use minimum stops for high success probability')
+    plan_parser.add_argument('--success-rate', type=float, 
+                           help='Target success rate (0.0-1.0) for species sightings')
     plan_parser.add_argument('--output', default='output', 
                            help='Output directory (default: output)')
     plan_parser.add_argument('--verbose', '-v', action='store_true', 
@@ -87,18 +97,61 @@ def plan_command(args, planner: BirdingPlanner, mcp_server: MCPServer = None):
     print("🦅 BirdingPlanner - Creating Your Trip Plan")
     print("=" * 50)
     
+    # Get route service for success probability calculations
+    route_service = planner.route_service
+    
+    # Show success probability analysis if requested
+    if args.min_stops or args.success_rate:
+        print("📊 Success Probability Analysis")
+        print("-" * 30)
+        
+        # Get recommended minimum stops
+        min_stops_info = route_service._get_recommended_min_stops(args.species, args.location)
+        if "error" not in min_stops_info:
+            print(f"Recommended minimum stops: {min_stops_info['recommended_stops']}")
+            print(f"Reasoning: {min_stops_info['reasoning']}")
+        
+        # Show success probabilities for different stop counts
+        print("\nSuccess probabilities by stop count:")
+        for stops in range(1, min(6, args.stops + 1)):
+            success_info = route_service.calculate_success_probability(args.location, args.species, stops)
+            if "error" not in success_info:
+                overall_rate = success_info["overall_success_rate"]
+                print(f"  {stops} stop(s): {overall_rate:.1%} overall success rate")
+                if args.verbose:
+                    for species, prob in success_info["species_probabilities"].items():
+                        print(f"    {species}: {prob:.1%}")
+        print()
+    
+    # Determine optimal number of stops
+    optimal_stops = args.stops
+    if args.success_rate:
+        # Use success target optimization
+        print(f"🎯 Optimizing for {args.success_rate:.0%} success rate...")
+        # Find minimum stops that meet target
+        for stops in range(1, 6):
+            success_info = route_service.calculate_success_probability(args.location, args.species, stops)
+            if "error" not in success_info and success_info["overall_success_rate"] >= args.success_rate:
+                optimal_stops = stops
+                break
+        else:
+            optimal_stops = 5  # Use maximum if target can't be met
+    elif args.min_stops:
+        optimal_stops = min_stops_info.get("recommended_stops", 1)
+        print(f"🎯 Using minimum {optimal_stops} stops for high success probability...")
+    
     # Create trip request
     request = TripRequest(
         species=args.species,
         base_location=args.location,
         date_range=args.date,
-        max_stops=args.stops
+        max_stops=optimal_stops
     )
     
     print(f"Target Species: {', '.join(request.species)}")
     print(f"Base Location: {request.base_location}")
     print(f"Date Range: {request.date_range}")
-    print(f"Max Stops: {request.max_stops}")
+    print(f"Optimal Stops: {optimal_stops}")
     print(f"AI Enhanced: {args.ai}")
     print()
     
@@ -128,9 +181,19 @@ def plan_command(args, planner: BirdingPlanner, mcp_server: MCPServer = None):
         print(f"   Total Distance: {trip_plan.trip_overview.total_distance_km:.1f} km")
         print(f"   Estimated Time: {trip_plan.trip_overview.estimated_time}")
         
+        # Show success probability for this plan
+        success_info = route_service.calculate_success_probability(
+            args.location, args.species, trip_plan.trip_overview.total_stops
+        )
+        if "error" not in success_info:
+            print(f"   Success Rate: {success_info['overall_success_rate']:.1%}")
+        
         print("\n🎯 Species Tiers:")
         for species, tier in trip_plan.trip_overview.species_tiers.items():
             print(f"   {species}: {tier}")
+            if "error" not in success_info and species in success_info["species_probabilities"]:
+                prob = success_info["species_probabilities"][species]
+                print(f"     (Success probability: {prob:.1%})")
         
         print("\n📁 Generated Files:")
         print(f"   - {args.output}/trip_plan.md (Complete trip plan)")

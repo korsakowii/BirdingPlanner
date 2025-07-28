@@ -2,10 +2,10 @@
 
 ## 🦅 Trip Overview
 - **Base Location**: New York
-- **Target Species**: American Robin, Northern Cardinal
+- **Target Species**: American Robin
 - **Date Range**: Spring 2024
-- **Total Stops**: 3
-- **Total Distance**: 24.0 km
+- **Total Stops**: 2
+- **Total Distance**: 13.0 km
 - **Estimated Time**: 4-6 hours
 
 ## 🎯 Target Species Analysis
@@ -13,12 +13,6 @@
 ### American Robin (Turdus migratorius)
 - **Tier**: T1 - Common Companion - Very common, easy to spot in most areas
 - **Occurrence Rate**: 85.0%
-- **Visibility**: high
-- **Challenge**: Perfect for beginners! Focus on learning identification features and behavior patterns.
-
-### Northern Cardinal (Cardinalis cardinalis)
-- **Tier**: T1 - Common Companion - Very common, easy to spot in most areas
-- **Occurrence Rate**: 78.0%
 - **Visibility**: high
 - **Challenge**: Perfect for beginners! Focus on learning identification features and behavior patterns.
 
@@ -50,25 +44,6 @@
 
 #### Recommended Hotspots:
 - **Central Park**: 230 species - Urban park with diverse habitats
-
-#### Viewing Schedule:
-- **Best Time**: 6:00 AM - 9:00 AM
-- **Activity**: Local birding at prime hotspots
-- **Duration**: 1-2 hours
-
-#### Recommendations:
-- Perfect for local birding - no long travel needed!
-- Visit during dawn chorus for best results
-- These common species are easily found locally
-- Great for beginners or time-limited birders
-
-### Stop 3: New York
-- **Distance**: 11.0 km
-- **Travel Time**: 35 minutes
-- **Species Compatibility**: 0.90
-
-#### Recommended Hotspots:
-- **Prospect Park**: 180 species - Brooklyn's premier birding location
 
 #### Viewing Schedule:
 - **Best Time**: 6:00 AM - 9:00 AM

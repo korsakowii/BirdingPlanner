@@ -17,16 +17,22 @@
 - **T5: Legendary Quest** - Very rare, special sightings that become memorable stories
 
 ### 🗺️ Intelligent Route Planning
-- Optimizes routes based on species compatibility and travel efficiency
-- Calculates distances using Haversine formula
-- Recommends best hotspots for each location
-- Generates detailed viewing schedules
+- **Smart Local vs. Long-Distance Routing**: Automatically detects when species are available locally
+- **Distance Optimization**: 3208km → 24km for common species (American Robin, Northern Cardinal)
+- **Practical Recommendations**: Context-aware suggestions for different skill levels
+- **Realistic Travel Times**: 15-35 minutes between local hotspots vs. hours for long-distance travel
+- **Species Compatibility Scoring**: Intelligent threshold-based routing decisions
+- **Haversine Distance Calculation**: Accurate geographic distance computation
+- **Best Hotspot Recommendations**: Optimized viewing locations for each species
 
 ### 📊 Species Availability Analysis
 - Seasonal and regional availability matching
 - Confidence scoring for species sightings
 - Optimal viewing times and conditions
 - Habitat preference analysis
+- **Real-time eBird Data Integration**: Live observation data from global birding community
+- **Success Rate Prediction**: Historical data-based viewing probability
+- **Hotspot Activity Analysis**: Location-specific birding recommendations
 
 ### ✍️ Natural Storytelling Content
 - Generates engaging birding stories and narratives
@@ -129,6 +135,7 @@ User Request
 - **AI增强模式**: 使用MCP Server和AI Agents进行智能规划
 - **标准模式**: 使用传统的服务层架构进行规划
 - **自动降级**: AI失败时自动切换到标准模式
+- **智能路线选择**: 根据物种稀有程度自动选择本地或长途路线
 
 #### **2. AI Agent层**
 - **SpeciesAgent**: AI驱动的物种分类、置信度评分和可用性分析
@@ -138,7 +145,7 @@ User Request
 
 #### **3. 服务层**
 - **SpeciesService**: 物种数据管理、分类和可用性分析
-- **RouteService**: 路线优化、距离计算和位置管理
+- **RouteService**: 智能路线优化、本地/长途判断、距离计算
 - **ContentService**: 内容生成、故事创作和格式化
 - **BirdingPlanner**: 主应用类，协调所有服务
 
@@ -192,6 +199,7 @@ BirdingPlanner/
 ├── setup_env.sh               # Environment setup script
 ├── check_status.py            # System status checker
 ├── demo_hybrid_architecture.py # Hybrid architecture demo
+├── CHANGELOG.md               # Version history and changes
 └── README.md                  # This file
 ```
 
@@ -206,6 +214,15 @@ BirdingPlanner/
 python3 -m venv birding_env
 source birding_env/bin/activate
 pip install -r requirements.txt
+
+# Option 3: Configure API Keys (optional, for real-time data)
+# 方法1: 环境变量
+export EBIRD_API_KEY=your_ebird_api_key_here
+
+# 方法2: .env文件 (推荐)
+cp env.example .env
+# 然后编辑.env文件，填入您的API密钥
+# Get your eBird API key from: https://ebird.org/api/keygen
 ```
 
 ### CLI Usage
@@ -268,6 +285,18 @@ python -m src.cli.main plan \
   --stops 5 \
   --ai \
   --output "custom_trip"
+```
+
+#### **eBird集成测试**
+```bash
+# 测试eBird API集成
+python test_ebird_integration.py
+
+# 运行eBird功能演示
+python demo_ebird_integration.py
+
+# 查看API密钥配置指南
+cat docs/api_keys.md
 ```
 
 ### Programmatic Usage
@@ -376,6 +405,46 @@ route_task = AgentTask(
 route_result = route_agent.execute(route_task)
 ```
 
+#### **eBird集成使用**
+```python
+from src.core.ebird_service import EBirdService
+from src.mcp.ebird_agent import EBirdAgent, AgentTask
+from src.config.settings import get_settings
+
+# 初始化eBird服务
+settings = get_settings()
+ebird_service = EBirdService(settings.ebird_api_key)
+ebird_agent = EBirdAgent(ebird_service)
+
+# 获取实时观察数据
+observations = ebird_service.get_recent_observations("New York", days=7)
+print(f"Found {len(observations)} recent observations")
+
+# 预测成功率
+success_rate = ebird_service.predict_success_rate(
+    "American Robin", "New York", "2024-04-15"
+)
+print(f"Success rate: {success_rate:.1%}")
+
+# AI增强物种分析
+species_task = AgentTask(
+    agent_name=ebird_agent.name,
+    task_type="species_analysis",
+    input_data={
+        "species": "American Robin",
+        "location": "New York",
+        "date_range": "Spring 2024"
+    }
+)
+result = ebird_agent.execute(species_task)
+
+if result.success:
+    analysis = result.data.get('analysis')
+    print(f"AI Insights: {analysis.ai_insights}")
+    print(f"Best Time: {analysis.best_time}")
+    print(f"Success Rate: {analysis.success_rate:.1%}")
+```
+
 ## 🧪 Testing
 
 ```bash
@@ -405,12 +474,12 @@ docker-compose up -d
 
 ## 📋 Example Output
 
-### **标准模式输出**
+### **智能本地观鸟 (常见鸟种)**
 ```
 🦅 BirdingPlanner - Creating Your Trip Plan
 ==================================================
 
-Target Species: American Robin, Northern Cardinal
+Target Species: American Robin, Northern Cardinal, Blue Jay
 Base Location: New York
 Date Range: Spring 2024
 Max Stops: 3
@@ -418,23 +487,69 @@ AI Enhanced: False
 
 📋 Using standard planning...
 
-✅ Trip plan saved to output/ directory
+✅ Trip plan saved to local_birding/ directory
 
 📋 Trip Plan Summary:
    Base Location: New York
-   Target Species: American Robin, Northern Cardinal
+   Target Species: American Robin, Northern Cardinal, Blue Jay
+   Total Stops: 3
+   Total Distance: 24.0 km
+   Estimated Time: 4-6 hours
+
+🎯 Species Tiers:
+   American Robin: T1
+   Northern Cardinal: T1
+   Blue Jay: T2
+
+📁 Generated Files:
+   - local_birding/trip_plan.md (Complete trip plan)
+   - local_birding/story_cards/ (Individual story cards)
+   - local_birding/social_captions.txt (Social media content)
+
+💡 Smart Recommendations:
+   - Perfect for local birding - no long travel needed!
+   - Visit during dawn chorus for best results
+   - These common species are easily found locally
+   - Great for beginners or time-limited birders
+```
+
+### **长途观鸟规划 (稀有鸟种)**
+```
+🦅 BirdingPlanner - Creating Your Trip Plan
+==================================================
+
+Target Species: Cerulean Warbler, Baltimore Oriole, Scarlet Tanager
+Base Location: New York
+Date Range: Spring 2024
+Max Stops: 3
+AI Enhanced: False
+
+📋 Using standard planning...
+
+✅ Trip plan saved to rare_birding/ directory
+
+📋 Trip Plan Summary:
+   Base Location: New York
+   Target Species: Cerulean Warbler, Baltimore Oriole, Scarlet Tanager
    Total Stops: 3
    Total Distance: 3208.4 km
    Estimated Time: 59 hours
 
 🎯 Species Tiers:
-   American Robin: T1
-   Northern Cardinal: T1
+   Cerulean Warbler: T4 (Elusive Explorer)
+   Baltimore Oriole: T3 (Seasonal Visitor)
+   Scarlet Tanager: T4 (Elusive Explorer)
 
 📁 Generated Files:
-   - output/trip_plan.md (Complete trip plan)
-   - output/story_cards/ (Individual story cards)
-   - output/social_captions.txt (Social media content)
+   - rare_birding/trip_plan.md (Complete trip plan)
+   - rare_birding/story_cards/ (Individual story cards)
+   - rare_birding/social_captions.txt (Social media content)
+
+💡 Smart Recommendations:
+   - These rare species require specialized travel
+   - Arrive early for best birding opportunities
+   - Bring binoculars and field guide
+   - Check weather conditions before travel
 ```
 
 ### **AI增强模式输出**
@@ -459,8 +574,8 @@ AI Enhanced: True
    Base Location: New York
    Target Species: American Robin, Northern Cardinal
    Total Stops: 3
-   Total Distance: 2987.2 km (AI Optimized)
-   Estimated Time: 52 hours (AI Optimized)
+   Total Distance: 24.0 km (AI Optimized)
+   Estimated Time: 4-6 hours (AI Optimized)
 
 🎯 AI-Enhanced Species Analysis:
    American Robin: T1 (Confidence: 95%)
@@ -474,16 +589,16 @@ AI Enhanced: True
      - Optimal Viewing: Dawn and dusk
 
 🤖 AI-Generated Insights:
-   - Route optimization reduced travel distance by 7%
-   - AI identified 3 additional hotspots with 90%+ species probability
+   - AI detected local availability and optimized for local birding
    - Generated 5 personalized story cards with location-specific details
    - Created 3 social media captions with trending hashtags
+   - Enhanced route recommendations with AI confidence scoring
 
 📁 Generated Files:
-   - ai_output/trip_plan.md (AI-enhanced trip plan)
-   - ai_output/story_cards/ (AI-generated stories)
-   - ai_output/social_captions/ (AI-optimized captions)
-   - ai_output/trip_data.json (Complete AI analysis data)
+   - ai_enhanced/trip_plan.md (AI-enhanced trip plan)
+   - ai_enhanced/story_cards/ (AI-generated stories)
+   - ai_enhanced/social_captions/ (AI-optimized captions)
+   - ai_enhanced/trip_data.json (Complete AI analysis data)
 ```
 
 ### Generated Story Example

@@ -6,7 +6,7 @@
 - **Date Range**: Spring 2024
 - **Total Stops**: 3
 - **Total Distance**: 24.0 km
-- **Estimated Time**: 4-6 hours
+- **Estimated Time**: 5-7 hours
 
 ## 🎯 Target Species Analysis
 

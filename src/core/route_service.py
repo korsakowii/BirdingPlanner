@@ -149,7 +149,7 @@ class RouteService:
         if avg_local_score > 0.7 and all(score > 0.6 for score in local_scores):
             return self._create_local_route(base_location, target_species, date_range)
         
-        # Otherwise, optimize for multi-location route
+        # Otherwise, optimize for multi-location route with distance-based selection
         location_scores = []
         for loc_name, location in self._location_database.items():
             if loc_name == base_location:
@@ -161,16 +161,31 @@ class RouteService:
                 for species in target_species
             ) / len(target_species)
             
-            # Distance penalty (simplified)
+            # Calculate distance and apply distance-based scoring
             distance = base_loc.coordinates.distance_to(location.coordinates)
-            distance_penalty = min(distance / 1000, 0.3)  # Max 30% penalty
             
-            final_score = species_score - distance_penalty
-            location_scores.append((loc_name, location, final_score))
+            # Distance scoring: closer locations get higher scores
+            if distance <= 50:  # Within 50km - very close
+                distance_score = 1.0
+            elif distance <= 150:  # Within 150km - close
+                distance_score = 0.8
+            elif distance <= 300:  # Within 300km - moderate
+                distance_score = 0.6
+            elif distance <= 500:  # Within 500km - far
+                distance_score = 0.4
+            else:  # Very far
+                distance_score = 0.2
+            
+            # Combine species score and distance score
+            final_score = (species_score * 0.7) + (distance_score * 0.3)
+            
+            location_scores.append((loc_name, location, final_score, distance))
         
-        # Sort by score and take top locations
-        location_scores.sort(key=lambda x: x[2], reverse=True)
-        selected_locations = location_scores[:max_stops]
+        # Sort by score (highest first) and distance (closest first for same scores)
+        location_scores.sort(key=lambda x: (x[2], -x[3]), reverse=True)
+        
+        # Dynamic selection: choose optimal number of stops based on scores and distances
+        selected_locations = self._select_optimal_locations(location_scores, max_stops)
         
         # Create route
         route = Route(
@@ -180,9 +195,8 @@ class RouteService:
         )
         
         # Add stops
-        for i, (loc_name, location, score) in enumerate(selected_locations):
-            distance = base_loc.coordinates.distance_to(location.coordinates)
-            travel_time = f"{int(distance / 60)} hours"
+        for i, (loc_name, location, score, distance) in enumerate(selected_locations):
+            travel_time = self._calculate_travel_time(distance)
             
             # Get best hotspots
             best_hotspots = location.get_best_hotspots(limit=2)
@@ -214,7 +228,7 @@ class RouteService:
             route.add_stop(stop)
         
         # Set estimated time
-        total_hours = int(route.total_distance / 60 + len(route.stops) * 2)
+        total_hours = self._calculate_total_time(route)
         route.estimated_total_time = f"{total_hours} hours"
         
         return route
@@ -231,11 +245,22 @@ class RouteService:
             date_range=date_range
         )
         
-        # Get local hotspots
-        local_hotspots = base_loc.get_best_hotspots(limit=3)
+        # Get local hotspots and select optimal number
+        all_local_hotspots = base_loc.get_best_hotspots(limit=5)  # Get more options
+        
+        # Select optimal number of hotspots (1-3 based on species and availability)
+        if len(target_species) == 1:
+            # Single species - 1-2 hotspots usually sufficient
+            selected_hotspots = all_local_hotspots[:min(2, len(all_local_hotspots))]
+        elif len(target_species) <= 2:
+            # 2 species - 2-3 hotspots for variety
+            selected_hotspots = all_local_hotspots[:min(3, len(all_local_hotspots))]
+        else:
+            # 3+ species - up to 3 hotspots
+            selected_hotspots = all_local_hotspots[:min(3, len(all_local_hotspots))]
         
         # Create local stops (different hotspots in the same city)
-        for i, hotspot in enumerate(local_hotspots):
+        for i, hotspot in enumerate(selected_hotspots):
             # Calculate local travel time (within city)
             local_travel_time = f"{15 + i * 10} minutes"  # 15-35 minutes between spots
             
@@ -267,9 +292,34 @@ class RouteService:
             route.add_stop(stop)
         
         # Set estimated time (much shorter for local birding)
-        route.estimated_total_time = "4-6 hours"
+        total_hours = 2 + len(selected_hotspots)  # 2 hours base + 1 hour per hotspot
+        route.estimated_total_time = f"{total_hours}-{total_hours + 2} hours"
         
         return route
+    
+    def _select_optimal_locations(self, location_scores: List[tuple], max_stops: int) -> List[tuple]:
+        """Select optimal number of locations based on scores and distances."""
+        if not location_scores:
+            return []
+        
+        # Simply take the top max_stops locations
+        # The caller (CLI) has already determined the optimal number of stops
+        return location_scores[:max_stops]
+    
+    def _calculate_travel_time(self, distance: float) -> str:
+        """Calculate travel time based on distance."""
+        if distance <= 50:
+            return f"{int(distance / 30)} hours"  # Local travel
+        elif distance <= 150:
+            return f"{int(distance / 60)} hours"  # Regional travel
+        else:
+            return f"{int(distance / 80)} hours"  # Long distance travel
+    
+    def _calculate_total_time(self, route: 'Route') -> int:
+        """Calculate total trip time including travel and birding."""
+        travel_time = route.total_distance / 80  # Average 80km/h
+        birding_time = len(route.stops) * 2  # 2 hours per stop
+        return int(travel_time + birding_time)
     
     def get_suggestions(self, base_location: str, target_species: List[str]) -> List[Dict]:
         """Get route suggestions for given parameters."""
@@ -277,4 +327,114 @@ class RouteService:
             route = self.optimize_route(base_location, target_species, "Spring 2024")
             return [route.to_dict()]
         except Exception as e:
-            return [{"error": str(e)}] 
+            return [{"error": str(e)}]
+    
+    def calculate_success_probability(self, base_location: str, target_species: List[str], 
+                                    num_stops: int) -> Dict[str, float]:
+        """Calculate success probability for seeing target species with given number of stops."""
+        base_loc = self.get_location(base_location)
+        if not base_loc:
+            return {"error": f"Unknown location: {base_location}"}
+        
+        # Calculate individual species probabilities
+        species_probabilities = {}
+        for species in target_species:
+            local_score = self.get_species_compatibility_score(species, base_location)
+            
+            # Base probability from local availability
+            base_prob = local_score
+            
+            # Probability increases with more stops (diminishing returns)
+            if num_stops == 1:
+                prob = base_prob
+            elif num_stops == 2:
+                prob = base_prob + (1 - base_prob) * 0.3  # 30% additional chance
+            elif num_stops == 3:
+                prob = base_prob + (1 - base_prob) * 0.5  # 50% additional chance
+            else:
+                prob = base_prob + (1 - base_prob) * 0.6  # Max 60% additional chance
+            
+            species_probabilities[species] = min(prob, 0.95)  # Cap at 95%
+        
+        # Calculate overall success probability (probability of seeing ALL species)
+        overall_prob = 1.0
+        for prob in species_probabilities.values():
+            overall_prob *= prob
+        
+        return {
+            "overall_success_rate": overall_prob,
+            "species_probabilities": species_probabilities,
+            "recommended_min_stops": self._get_recommended_min_stops(target_species, base_location)
+        }
+    
+    def _get_recommended_min_stops(self, target_species: List[str], base_location: str) -> Dict[str, int]:
+        """Get recommended minimum stops for high success probability."""
+        base_loc = self.get_location(base_location)
+        if not base_loc:
+            return {"error": f"Unknown location: {base_location}"}
+        
+        # Calculate average local availability
+        local_scores = []
+        for species in target_species:
+            local_score = self.get_species_compatibility_score(species, base_location)
+            local_scores.append(local_score)
+        
+        avg_local_score = sum(local_scores) / len(local_scores)
+        min_local_score = min(local_scores)
+        
+        # Determine recommended stops based on availability
+        if avg_local_score > 0.8 and min_local_score > 0.7:
+            # High local availability - 1-2 stops sufficient
+            recommended_stops = 1 if len(target_species) == 1 else 2
+        elif avg_local_score > 0.6 and min_local_score > 0.5:
+            # Moderate local availability - 2-3 stops recommended
+            recommended_stops = 2 if len(target_species) <= 2 else 3
+        else:
+            # Low local availability - 3+ stops needed
+            recommended_stops = 3
+        
+        # Adjust based on species count
+        if len(target_species) == 1:
+            recommended_stops = max(1, recommended_stops - 1)
+        elif len(target_species) >= 3:
+            recommended_stops = min(5, recommended_stops + 1)
+        
+        return {
+            "recommended_stops": recommended_stops,
+            "reasoning": self._get_recommendation_reasoning(avg_local_score, min_local_score, len(target_species))
+        }
+    
+    def _get_recommendation_reasoning(self, avg_score: float, min_score: float, species_count: int) -> str:
+        """Get reasoning for recommended stop count."""
+        if avg_score > 0.8 and min_score > 0.7:
+            if species_count == 1:
+                return "High local availability - 1 stop should be sufficient"
+            else:
+                return "High local availability - 2 stops for variety"
+        elif avg_score > 0.6 and min_score > 0.5:
+            if species_count <= 2:
+                return "Moderate local availability - 2 stops recommended"
+            else:
+                return "Moderate local availability - 3 stops for better coverage"
+        else:
+            if species_count <= 2:
+                return "Low local availability - 3 stops needed for success"
+            else:
+                return "Low local availability - 3+ stops recommended for multiple species"
+    
+    def optimize_route_with_success_target(self, base_location: str, target_species: List[str], 
+                                         date_range: str, target_success_rate: float = 0.8) -> Route:
+        """Optimize route to achieve target success rate."""
+        # Start with minimum recommended stops
+        min_stops_info = self._get_recommended_min_stops(target_species, base_location)
+        min_stops = min_stops_info["recommended_stops"]
+        
+        # Try different numbers of stops to find the minimum that meets target
+        for num_stops in range(min_stops, 6):  # Try up to 5 stops
+            success_info = self.calculate_success_probability(base_location, target_species, num_stops)
+            if success_info["overall_success_rate"] >= target_success_rate:
+                # Found minimum stops that meet target
+                return self.optimize_route(base_location, target_species, date_range, num_stops)
+        
+        # If we can't meet target with 5 stops, return best possible
+        return self.optimize_route(base_location, target_species, date_range, 5) 
