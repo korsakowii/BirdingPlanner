@@ -137,7 +137,19 @@ class RouteService:
         if not base_loc:
             raise ValueError(f"Unknown location: {base_location}")
         
-        # Score all locations
+        # Check if all species can be found locally
+        local_scores = []
+        for species in target_species:
+            local_score = self.get_species_compatibility_score(species, base_location)
+            local_scores.append(local_score)
+        
+        avg_local_score = sum(local_scores) / len(local_scores)
+        
+        # If all species have high local availability (>0.7), suggest local birding
+        if avg_local_score > 0.7 and all(score > 0.6 for score in local_scores):
+            return self._create_local_route(base_location, target_species, date_range)
+        
+        # Otherwise, optimize for multi-location route
         location_scores = []
         for loc_name, location in self._location_database.items():
             if loc_name == base_location:
@@ -204,6 +216,58 @@ class RouteService:
         # Set estimated time
         total_hours = int(route.total_distance / 60 + len(route.stops) * 2)
         route.estimated_total_time = f"{total_hours} hours"
+        
+        return route
+    
+    def _create_local_route(self, base_location: str, target_species: List[str], 
+                           date_range: str) -> Route:
+        """Create a local birding route when species are available nearby."""
+        base_loc = self.get_location(base_location)
+        
+        # Create route with local focus
+        route = Route(
+            base_location=base_location,
+            target_species=target_species,
+            date_range=date_range
+        )
+        
+        # Get local hotspots
+        local_hotspots = base_loc.get_best_hotspots(limit=3)
+        
+        # Create local stops (different hotspots in the same city)
+        for i, hotspot in enumerate(local_hotspots):
+            # Calculate local travel time (within city)
+            local_travel_time = f"{15 + i * 10} minutes"  # 15-35 minutes between spots
+            
+            # Create viewing schedule
+            viewing_schedule = ViewingSchedule(
+                recommended_time="6:00 AM - 9:00 AM",
+                activity_description="Local birding at prime hotspots",
+                target_species_focus=target_species,
+                estimated_duration="1-2 hours"
+            )
+            
+            # Create route stop
+            stop = RouteStop(
+                stop_number=i + 1,
+                location=base_loc,
+                distance_from_previous=5 + i * 3,  # 5-11 km between local spots
+                travel_time=local_travel_time,
+                species_compatibility=0.9,  # High local compatibility
+                hotspots=[hotspot],
+                viewing_schedule=viewing_schedule,
+                recommendations=[
+                    "Perfect for local birding - no long travel needed!",
+                    "Visit during dawn chorus for best results",
+                    "These common species are easily found locally",
+                    "Great for beginners or time-limited birders"
+                ]
+            )
+            
+            route.add_stop(stop)
+        
+        # Set estimated time (much shorter for local birding)
+        route.estimated_total_time = "4-6 hours"
         
         return route
     
